@@ -33,7 +33,8 @@ project "Tutorial"
 		"%{wks.location}/vendor/glad2/include",
 		"%{wks.location}/vendor/glfw/include",
 		"%{wks.location}/vendor/glm",
-		"%{wks.location}/vendor/spdlog/include"
+		"%{wks.location}/vendor/spdlog/include",
+		"%{wks.location}/vendor/FoxoCommons/include"
 	}
 
 	defines
@@ -44,7 +45,8 @@ project "Tutorial"
 	links
 	{
 		"glad2",
-		"glfw"
+		"glfw",
+		"FoxoCommons"
 	}
 
 	filter "system:windows"
@@ -68,6 +70,46 @@ project "Tutorial"
 		optimize "on"
 
 group "Dependencies"
+
+project "FoxoCommons"
+	location "vendor/FoxoCommons"
+	kind "StaticLib"
+	language "C++"
+	cppdialect "C++17"
+
+	staticruntime "on"
+	systemversion "latest"
+
+	targetdir (outputbindir)
+	objdir (outputobjdir)
+
+	files
+	{
+		"%{prj.location}/src/**.cpp"
+	}
+
+	includedirs
+	{
+		"%{prj.location}/include/FoxoCommons",
+		"%{wks.location}/vendor/glad2/include",
+		"%{wks.location}/vendor/glm",
+		"%{wks.location}/vendor/spdlog/include",
+		"%{wks.location}/vendor/glfw/include"
+	}
+
+	defines
+	{
+		"GLFW_INCLUDE_NONE",
+		"_CRT_SECURE_NO_WARNINGS"
+	}
+
+	filter "configurations:Debug"
+		runtime "Debug"
+		symbols "on"
+
+	filter "configurations:Release"
+		runtime "Release"
+		optimize "on"
 
 project "glad2"
 	location "vendor/glad2"

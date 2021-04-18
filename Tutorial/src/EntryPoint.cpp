@@ -9,11 +9,11 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/euler_angles.hpp>
 
-#include "FoxoCommons/Window.h"
-#include "FoxoCommons/Shader.h"
-#include "FoxoCommons/Transform.h"
-#include "FoxoCommons/Util.h"
-#include "FoxoCommons/Texture.h"
+#include <FoxoCommons/Window.h>
+#include <FoxoCommons/Shader.h>
+#include <FoxoCommons/Transform.h>
+#include <FoxoCommons/Util.h>
+#include <FoxoCommons/Texture.h>
 
 #include "Log.h"
 #include "OpenSimplexNoise.h"
