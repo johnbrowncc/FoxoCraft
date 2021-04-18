@@ -257,6 +257,7 @@ struct ChunkData
 		std::shared_ptr<Block> grass = ::GetBlock("core.grass");
 		std::shared_ptr<Block> dirt = ::GetBlock("core.dirt");
 		std::shared_ptr<Block> wood = ::GetBlock("core.wood");
+		std::shared_ptr<Block> stone = ::GetBlock("core.stone");
 
 		for (int z = 0; z < s_ChunkSize; ++z)
 		{
@@ -266,26 +267,29 @@ struct ChunkData
 			{
 				int wx = x + m_X * s_ChunkSize;
 
-				int height = FoxoCommons::Map<float>((float) noise.Evaluate(wx / 16.f, wz / 16.f), -1.f, 1.f, 5.f, 20.f);
+				double height1 = noise.Evaluate(wx / 64.f, wz / 64.f) * 32.0f;
+				double height2 = noise.Evaluate(wx / 32.f, wz / 32.f) * 16.0f;
+				double height3 = noise.Evaluate(wx / 16.f, wz / 16.f) * 8.0f;
+				double height4 = noise.Evaluate(wx / 8.f, wz / 8.f) * 4.0f;
 
-				for (int y = 0; y <= height; ++y)
+				int height = static_cast<int>(height1 + height2 + height3 + height4);
+
+				for (int y = 0; y < s_ChunkSize; ++y)
 				{
-					if(y == height) SetBlock(x, y, z, grass);
-					else SetBlock(x, y, z, dirt);
+					int wy = y + m_Y * s_ChunkSize;
+					
+					if (wy < height)
+					{
+						if (wy < height - 3) SetBlock(x, y, z, stone);
+						else SetBlock(x, y, z, dirt);
+					}
+
+					if (wy == height)
+						SetBlock(x, y, z, grass);
+
+					if (((wx == 0 || wz == 0) && wy == 0) || ((wy == 0 || wz == 0) && wx == 0))
+						SetBlock(x, y, z, wood);
 				}
-			}
-		}
-
-		for (int z = 0; z < s_ChunkSize; ++z)
-		{
-			int wz = z + m_Z * s_ChunkSize;
-
-			for (int x = 0; x < s_ChunkSize; ++x)
-			{
-				int wx = x + m_X * s_ChunkSize;
-
-				if(wx == 0 || wz == 0)
-					SetBlock(x, 15, z, wood);
 			}
 		}
 	}
@@ -321,25 +325,35 @@ struct ChunkData
 		}
 
 		if (m_Vao != 0)
+		{
 			glDeleteVertexArrays(1, &m_Vao);
+			m_Vao = 0;
+		}
 
 		if (m_Vbo != 0)
+		{
 			glDeleteBuffers(1, &m_Vbo);
+			m_Vbo = 0;
+		}
 
-		glCreateBuffers(1, &m_Vbo);
-		glNamedBufferStorage(m_Vbo, data.size() * sizeof(float), data.data(), GL_NONE);
+		// no data was in the chunk, dont create gpu information
+		if (data.size() != 0)
+		{
+			glCreateBuffers(1, &m_Vbo);
+			glNamedBufferStorage(m_Vbo, data.size() * sizeof(float), data.data(), GL_NONE);
 
-		glCreateVertexArrays(1, &m_Vao);
-		glVertexArrayVertexBuffer(m_Vao, 0, m_Vbo, 0, 9 * sizeof(float));
-		glEnableVertexArrayAttrib(m_Vao, 0);
-		glEnableVertexArrayAttrib(m_Vao, 1);
-		glEnableVertexArrayAttrib(m_Vao, 2);
-		glVertexArrayAttribFormat(m_Vao, 0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(float));
-		glVertexArrayAttribFormat(m_Vao, 1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float));
-		glVertexArrayAttribFormat(m_Vao, 2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float));
-		glVertexArrayAttribBinding(m_Vao, 0, 0);
-		glVertexArrayAttribBinding(m_Vao, 1, 0);
-		glVertexArrayAttribBinding(m_Vao, 2, 0);
+			glCreateVertexArrays(1, &m_Vao);
+			glVertexArrayVertexBuffer(m_Vao, 0, m_Vbo, 0, 9 * sizeof(float));
+			glEnableVertexArrayAttrib(m_Vao, 0);
+			glEnableVertexArrayAttrib(m_Vao, 1);
+			glEnableVertexArrayAttrib(m_Vao, 2);
+			glVertexArrayAttribFormat(m_Vao, 0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(float));
+			glVertexArrayAttribFormat(m_Vao, 1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float));
+			glVertexArrayAttribFormat(m_Vao, 2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float));
+			glVertexArrayAttribBinding(m_Vao, 0, 0);
+			glVertexArrayAttribBinding(m_Vao, 1, 0);
+			glVertexArrayAttribBinding(m_Vao, 2, 0);
+		}
 	}
 
 	int m_Count = 0;
@@ -348,6 +362,8 @@ struct ChunkData
 
 	void Render()
 	{
+		if (m_Vao == 0 || m_Vbo == 0) return;
+
 		glBindVertexArray(m_Vao);
 		glDrawArrays(GL_TRIANGLES, 0, m_Count);
 	}
@@ -363,12 +379,15 @@ struct World
 
 		for (int z = -radius; z <= radius; ++z)
 		{
-			for (int x = -radius; x <= radius; ++x)
+			for (int y = -radius; y <= radius; ++y)
 			{
-				std::shared_ptr<ChunkData> chunk = std::make_shared<ChunkData>(x, 0, z);
-				chunk->Generate();
-				chunk->BuildMeshV2();
-				m_Chunks.push_back(chunk);
+				for (int x = -radius; x <= radius; ++x)
+				{
+					std::shared_ptr<ChunkData> chunk = std::make_shared<ChunkData>(x, y, z);
+					chunk->Generate();
+					chunk->BuildMeshV2();
+					m_Chunks.push_back(chunk);
+				}
 			}
 		}
 	}
@@ -386,7 +405,6 @@ static int Run()
 {
 	FoxoCommons::Window window = FoxoCommons::Window(1280, 720, "FoxoCraft", []()
 	{
-		glfwWindowHint(GLFW_SAMPLES, 8);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -416,59 +434,67 @@ static int Run()
 
 	FoxoCommons::Texture2DArray texture;
 	{
-		s_BlockFaces["core.grass"] = std::make_shared<BlockFace>(0);
-		s_BlockFaces["core.grass_side"] = std::make_shared<BlockFace>(1);
-		s_BlockFaces["core.dirt"] = std::make_shared<BlockFace>(2);
-		s_BlockFaces["core.wood"] = std::make_shared<BlockFace>(3);
+		struct BlockFaceBuilder
+		{
+			std::string m_FileName;
+			std::string m_Id;
 
-		int w, h, c;
+			BlockFaceBuilder(std::string_view filename, std::string_view id)
+			{
+				m_FileName = filename;
+				m_Id = id;
+			}
+
+			int w = 0, h = 0, c = 0;
+			stbi_uc* pixels = nullptr;
+		};
+
+		std::vector<BlockFaceBuilder> faces;
+		faces.reserve(5);
+		faces.emplace_back("res/textures/grass.png", "core.grass");
+		faces.emplace_back("res/textures/stone.png", "core.stone");
+		faces.emplace_back("res/textures/grass_side.png", "core.grass_side");
+		faces.emplace_back("res/textures/dirt.png", "core.dirt");
+		faces.emplace_back("res/textures/wood.png", "core.wood");
+
 		stbi_set_flip_vertically_on_load(true);
-		texture = FoxoCommons::Texture2DArray(GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_RGBA8, 32, 32, 4, true);
-
+		
+		for (auto& face : faces)
 		{
-			stbi_uc* pixels = stbi_load("res/textures/grass.png", &w, &h, &c, 4);
-
-			if (pixels)
-				texture.SubImage(0, 0, 0, w, h, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-			stbi_image_free(pixels);
+			face.pixels = stbi_load(face.m_FileName.data(), &face.w, &face.h, &face.c, 4);	
 		}
 
+		int largestWidth = 0, largestHeight = 0;
+
+		for (auto& face : faces)
 		{
-			stbi_uc* pixels = stbi_load("res/textures/grass_side.png", &w, &h, &c, 4);
-
-			if (pixels)
-				texture.SubImage(0, 0, 1, w, h, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-			stbi_image_free(pixels);
+			if (face.w > largestWidth) largestWidth = face.w;
+			if (face.h > largestHeight) largestHeight = face.h;
 		}
 
+		texture = FoxoCommons::Texture2DArray(GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_RGBA8, largestWidth, largestHeight, faces.size(), true);
+
+		for (size_t i = 0; i < faces.size(); ++i)
 		{
-			stbi_uc* pixels = stbi_load("res/textures/dirt.png", &w, &h, &c, 4);
+			auto& face = faces[i];
 
-			if (pixels)
-				texture.SubImage(0, 0, 2, w, h, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+			s_BlockFaces[face.m_Id] = std::make_shared<BlockFace>(i);
 
-			stbi_image_free(pixels);
-		}
-
-		{
-			stbi_uc* pixels = stbi_load("res/textures/wood.png", &w, &h, &c, 4);
-
-			if (pixels)
-				texture.SubImage(0, 0, 3, w, h, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-			stbi_image_free(pixels);
+			if (face.pixels)
+			{
+				texture.SubImage(0, 0, i, face.w, face.h, 1, GL_RGBA, GL_UNSIGNED_BYTE, face.pixels);
+				stbi_image_free(face.pixels);
+			}
 		}
 
 		texture.GenerateMipmaps();
 	}
 
 	{
-
 		s_Blocks["core.grass"] = std::make_shared<Block>(GetBlockFace("core.grass"), GetBlockFace("core.grass_side"), GetBlockFace("core.dirt"));
 		s_Blocks["core.dirt"] = std::make_shared<Block>(GetBlockFace("core.dirt"), GetBlockFace("core.dirt"), GetBlockFace("core.dirt"));
 		s_Blocks["core.wood"] = std::make_shared<Block>(GetBlockFace("core.wood"), GetBlockFace("core.wood"), GetBlockFace("core.wood"));
+		s_Blocks["core.stone"] = std::make_shared<Block>(GetBlockFace("core.stone"), GetBlockFace("core.stone"), GetBlockFace("core.stone"));
 	}
 
 	World world;
