@@ -9,7 +9,7 @@ uniform sampler2DArray u_Albedo;
 
 void main()
 {
-	float nDot1 = max(dot(frag_Normal, -normalize(vec3(2, -10, 3))), 0.2);
+	float nDot1 = max(dot(frag_Normal, -normalize(vec3(2, -5, 3))), 0.2);
 
 	out_Color = texture(u_Albedo, frag_TexCoord);
 	out_Color.rgb *= nDot1;
