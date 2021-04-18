@@ -1,6 +1,6 @@
-workspace "Tutorial"
+workspace "FoxoCraft"
 	architecture "x86_64"
-	startproject "Tutorial"
+	startproject "FoxoCraft"
 	configurations { "Debug", "Release" }
 
 	flags
@@ -11,8 +11,8 @@ workspace "Tutorial"
 outputbindir = "bin/%{cfg.system}-%{cfg.architecture}-%{cfg.buildcfg}/%{prj.name}"
 outputobjdir = "bin-int/%{cfg.system}-%{cfg.architecture}-%{cfg.buildcfg}/%{prj.name}"
 
-project "Tutorial"
-	location "Tutorial"
+project "FoxoCraft"
+	location "FoxoCraft"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++17"
@@ -39,7 +39,7 @@ project "Tutorial"
 
 	defines
 	{
-		"GLFW_INCLUDE_NonE"
+		"GLFW_INCLUDE_NONE"
 	}
 
 	links
