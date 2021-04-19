@@ -10,3 +10,6 @@
 [submodule "vendor/FoxoCommons"]
 	path = vendor/FoxoCommons
 	url = https://github.com/anthofoxo/FoxoCommons
+[submodule "vendor/imgui"]
+	path = vendor/imgui
+	url = https://github.com/ocornut/imgui
