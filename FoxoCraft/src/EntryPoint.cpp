@@ -282,13 +282,11 @@ static int Run()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		ImGui::ShowDemoWindow();
-
-		
-
-		
-
-		///
+		if (ImGui::Begin("Debug"))
+		{
+			ImGui::Text("OvO");
+		}
+		ImGui::End();
 
 		camera.Update(window.GetHandle(), deltaTime, s_Storage.mouseDelta.x, s_Storage.mouseDelta.y, mouseLocked);
 

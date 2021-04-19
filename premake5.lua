@@ -54,6 +54,12 @@ project "FoxoCraft"
 	filter "system:windows"
 		defines "SPDLOG_WCHAR_TO_UTF8_SUPPORT"
 
+	filter "system:linux"
+		links
+		{
+			"libdl"
+		}
+
 	filter "system:macosx"
 		links
 		{
