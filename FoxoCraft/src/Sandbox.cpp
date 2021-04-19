@@ -283,6 +283,12 @@ namespace FoxoCraft
 		if (ImGui::Begin("Debug"))
 		{
 			ImGui::Checkbox("Enable Wireframe", &enableWireframe);
+
+			ImGui::Separator();
+			ImGui::Text("Player Pos");
+			ImGui::Text("X: %i", static_cast<int>(m_Player.m_Transform.m_Pos.x));
+			ImGui::Text("Y: %i", static_cast<int>(m_Player.m_Transform.m_Pos.y));
+			ImGui::Text("Z: %i", static_cast<int>(m_Player.m_Transform.m_Pos.z));
 		}
 		ImGui::End();
 
