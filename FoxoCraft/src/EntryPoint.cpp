@@ -257,6 +257,26 @@ struct ModLoader
 	}
 };
 
+static void ImGuiInit(const FoxoCommons::Window& window)
+{
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void) io;
+
+	ImGui::StyleColorsDark();
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplGlfw_InitForOpenGL(window.GetHandle(), true);
+	ImGui_ImplOpenGL3_Init("#version 460 core");
+}
+
+static void ImGuiDestroy()
+{
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+}
+
 static int Run()
 {
 	FoxoCommons::Window window = FoxoCommons::Window(1280, 720, "FoxoCraft", []()
@@ -282,19 +302,7 @@ static int Run()
 	spdlog::info(glGetString(GL_VERSION));
 	spdlog::info(glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void) io;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
-	//ImGui::StyleColorsClassic();
-
-	// Setup Platform/Renderer backends
-	ImGui_ImplGlfw_InitForOpenGL(window.GetHandle(), true);
-	ImGui_ImplOpenGL3_Init("#version 460 core");
+	ImGuiInit(window);
 
 	FoxoCommons::Texture2DArray texture;
 	ModLoader::Load(texture);
@@ -430,6 +438,8 @@ static int Run()
 
 		window.SwapBuffers();
 	}
+
+	ImGuiDestroy();
 
 	return 0;
 }
