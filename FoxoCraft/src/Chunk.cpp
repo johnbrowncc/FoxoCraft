@@ -3,42 +3,10 @@
 #include <unordered_map>
 
 #include "OpenSimplexNoise.h"
+#include "Log.h"
 
 namespace FoxoCraft
 {
-	static std::unordered_map<std::string, std::shared_ptr<BlockFace>> s_BlockFaces;
-	static std::unordered_map<std::string, std::shared_ptr<Block>> s_Blocks;
-
-	std::shared_ptr<BlockFace> GetBlockFace(const std::string& id)
-	{
-		auto result = s_BlockFaces.find(id);
-
-		if (result != s_BlockFaces.end())
-			return result->second;
-
-		return nullptr;
-	}
-
-	std::shared_ptr<Block> GetBlock(const std::string& id)
-	{
-		auto result = s_Blocks.find(id);
-
-		if (result != s_Blocks.end())
-			return result->second;
-
-		return nullptr;
-	}
-
-	void RegisterBlockFace(const std::string& id, std::shared_ptr<BlockFace> face)
-	{
-		s_BlockFaces[id] = face;
-	}
-
-	void RegisterBlock(const std::string& id, std::shared_ptr<Block> block)
-	{
-		s_Blocks[id] = block;
-	}
-
 	namespace Faces
 	{
 		const float* GetFacePointer(size_t faceIndex)
@@ -72,9 +40,62 @@ namespace FoxoCraft
 	{
 	}
 
-	Block::Block(std::shared_ptr<BlockFace> top, std::shared_ptr<BlockFace> side, std::shared_ptr<BlockFace> bottom)
+	Block::Block(BlockFace* top, BlockFace* side, BlockFace* bottom)
 		: m_Top(top), m_Side(side), m_Bottom(bottom)
 	{
+	}
+
+	static std::unordered_map<std::string, BlockFace> s_BlockFaces;
+	static std::unordered_map<std::string, Block> s_Blocks;
+	static bool s_LockModify = false;
+
+	BlockFace* GetBlockFace(const std::string& id)
+	{
+		auto result = s_BlockFaces.find(id);
+
+		if (result != s_BlockFaces.end())
+			return &result->second;
+
+		return nullptr;
+	}
+
+	Block* GetBlock(const std::string& id)
+	{
+		auto result = s_Blocks.find(id);
+
+		if (result != s_Blocks.end())
+			return &result->second;
+
+		return nullptr;
+	}
+
+	void RegisterBlockFace(const std::string& id, const BlockFace& face)
+	{
+		if (s_LockModify)
+		{
+			FE_LOG_ERROR("Registers have been locked, cannot modify further");
+			__debugbreak();
+			return;
+		}
+
+		s_BlockFaces[id] = face;
+	}
+
+	void RegisterBlock(const std::string& id, const Block& block)
+	{
+		if (s_LockModify)
+		{
+			FE_LOG_ERROR("Registers have been locked, cannot modify further");
+			__debugbreak();
+			return;
+		}
+
+		s_Blocks[id] = block;
+	}
+
+	void LockModify()
+	{
+		s_LockModify = true;
 	}
 
 	Chunk::Chunk(glm::ivec3 pos, World* world)
@@ -109,19 +130,19 @@ namespace FoxoCraft
 		return ws;
 	}
 
-	std::shared_ptr<Block> Chunk::GetBlockLSUS(glm::ivec3 ls)
+	Block* Chunk::GetBlockLSUS(glm::ivec3 ls)
 	{
 		return m_Data[IndexLS(ls)];
 	}
 
-	std::shared_ptr<Block> Chunk::GetBlockLS(glm::ivec3 ls)
+	Block* Chunk::GetBlockLS(glm::ivec3 ls)
 	{
 		if (!InBoundsLS(ls)) return nullptr;
 		return GetBlockLSUS(ls);
 	}
 
 
-	std::shared_ptr<Block> Chunk::GetBlockWSEX(glm::ivec3 ws)
+	Block* Chunk::GetBlockWSEX(glm::ivec3 ws)
 	{
 		glm::ivec3 ls = WSLS(ws);
 
@@ -130,7 +151,7 @@ namespace FoxoCraft
 		return m_World->GetBlockWS(ws);
 	}
 
-	void Chunk::SetBlockLS(glm::ivec3 ls, std::shared_ptr<Block> block)
+	void Chunk::SetBlockLS(glm::ivec3 ls, Block* block)
 	{
 		if (!InBoundsLS(ls)) return;
 		m_Data[IndexLS(ls)] = block;
@@ -140,10 +161,10 @@ namespace FoxoCraft
 	{
 		OpenSimplexNoise noise = OpenSimplexNoise(0);
 
-		std::shared_ptr<Block> grass = GetBlock("core.grass");
-		std::shared_ptr<Block> dirt = GetBlock("core.dirt");
-		std::shared_ptr<Block> wood = GetBlock("core.wood");
-		std::shared_ptr<Block> stone = GetBlock("core.stone");
+		Block* grass = GetBlock("core.grass");
+		Block* dirt = GetBlock("core.dirt");
+		Block* wood = GetBlock("core.wood");
+		Block* stone = GetBlock("core.stone");
 
 		glm::ivec3 ws;
 		glm::ivec3 ls;
@@ -201,7 +222,7 @@ namespace FoxoCraft
 				{
 					ws.x = ls.x + m_Pos.x * s_ChunkSize;
 
-					std::shared_ptr<Block> block = GetBlockLS(ls);
+					Block* block = GetBlockLS(ls);
 					if (!block) continue;
 
 					if (!GetBlockWSEX(ws + glm::ivec3(-1, 0, 0))) Faces::AppendFace(data, 0, ws, block->m_Side->m_TextureIndex, m_Count);
@@ -279,7 +300,7 @@ namespace FoxoCraft
 		}
 	}
 
-	std::shared_ptr<Block> World::GetBlockWS(glm::ivec3 ws)
+	Block* World::GetBlockWS(glm::ivec3 ws)
 	{
 		glm::ivec3 cs;
 		cs.x = static_cast<int>(glm::floor(static_cast<float>(ws.x) / static_cast<float>(s_ChunkSize)));

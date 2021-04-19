@@ -131,7 +131,7 @@ struct ModLoader
 		{
 			auto& texture = textures[i];
 
-			FoxoCraft::RegisterBlockFace(texture.m_Id, std::make_shared<FoxoCraft::BlockFace>(i));
+			FoxoCraft::RegisterBlockFace(texture.m_Id, FoxoCraft::BlockFace(i));
 
 			if (texture.pixels)
 			{
@@ -173,10 +173,11 @@ static int Run()
 	FoxoCommons::Texture2DArray texture;
 	ModLoader::Load(texture);
 
-	FoxoCraft::RegisterBlock("core.grass", std::make_shared<FoxoCraft::Block>(FoxoCraft::GetBlockFace("core.grass"), FoxoCraft::GetBlockFace("core.grass_side"), FoxoCraft::GetBlockFace("core.dirt")));
-	FoxoCraft::RegisterBlock("core.dirt", std::make_shared<FoxoCraft::Block>(FoxoCraft::GetBlockFace("core.dirt"), FoxoCraft::GetBlockFace("core.dirt"), FoxoCraft::GetBlockFace("core.dirt")));
-	FoxoCraft::RegisterBlock("core.wood", std::make_shared<FoxoCraft::Block>(FoxoCraft::GetBlockFace("core.wood"), FoxoCraft::GetBlockFace("core.wood"), FoxoCraft::GetBlockFace("core.wood")));
-	FoxoCraft::RegisterBlock("core.stone", std::make_shared<FoxoCraft::Block>(FoxoCraft::GetBlockFace("core.stone"), FoxoCraft::GetBlockFace("core.stone"), FoxoCraft::GetBlockFace("core.stone")));
+	FoxoCraft::RegisterBlock("core.grass", FoxoCraft::Block(FoxoCraft::GetBlockFace("core.grass"), FoxoCraft::GetBlockFace("core.grass_side"), FoxoCraft::GetBlockFace("core.dirt")));
+	FoxoCraft::RegisterBlock("core.dirt", FoxoCraft::Block(FoxoCraft::GetBlockFace("core.dirt"), FoxoCraft::GetBlockFace("core.dirt"), FoxoCraft::GetBlockFace("core.dirt")));
+	FoxoCraft::RegisterBlock("core.wood", FoxoCraft::Block(FoxoCraft::GetBlockFace("core.wood"), FoxoCraft::GetBlockFace("core.wood"), FoxoCraft::GetBlockFace("core.wood")));
+	FoxoCraft::RegisterBlock("core.stone", FoxoCraft::Block(FoxoCraft::GetBlockFace("core.stone"), FoxoCraft::GetBlockFace("core.stone"), FoxoCraft::GetBlockFace("core.stone")));
+	FoxoCraft::LockModify(); // revent further changes to structures
 
 	FoxoCraft::World world;
 	world.AddChunks();

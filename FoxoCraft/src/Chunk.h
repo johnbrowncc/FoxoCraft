@@ -73,25 +73,28 @@ namespace FoxoCraft
 
 	struct BlockFace
 	{
+		BlockFace() = default;
 		BlockFace(size_t index);
 
-		size_t m_TextureIndex;
+		size_t m_TextureIndex = -1;
 	};
 
 	struct Block
 	{
-		Block(std::shared_ptr<BlockFace> top, std::shared_ptr<BlockFace> side, std::shared_ptr<BlockFace> bottom);
+		Block() = default;
+		Block(BlockFace* top, BlockFace* side, BlockFace* bottom);
 
-		std::shared_ptr<BlockFace> m_Top;
-		std::shared_ptr<BlockFace> m_Side;
-		std::shared_ptr<BlockFace> m_Bottom;
+		BlockFace* m_Top = nullptr;
+		BlockFace* m_Side = nullptr;
+		BlockFace* m_Bottom = nullptr;
 	};
 
-	std::shared_ptr<BlockFace> GetBlockFace(const std::string& id);
-	std::shared_ptr<Block> GetBlock(const std::string& id);
+	BlockFace* GetBlockFace(const std::string& id);
+	Block* GetBlock(const std::string& id);
 
-	void RegisterBlockFace(const std::string& id, std::shared_ptr<BlockFace> face);
-	void RegisterBlock(const std::string& id, std::shared_ptr<Block> block);
+	void RegisterBlockFace(const std::string& id, const BlockFace& face);
+	void RegisterBlock(const std::string& id, const Block& block);
+	void LockModify();
 
 	struct World;
 
@@ -99,7 +102,7 @@ namespace FoxoCraft
 	{
 		glm::ivec3 m_Pos = glm::ivec3(0, 0, 0);
 		World* m_World = nullptr;
-		std::array<std::shared_ptr<Block>, s_ChunkSize3> m_Data;
+		std::array<Block*, s_ChunkSize3> m_Data;
 		GLint m_Count = 0;
 		GLuint m_Vao = 0;
 		GLuint m_Vbo = 0;
@@ -116,13 +119,13 @@ namespace FoxoCraft
 
 		glm::ivec3 WSLS(glm::ivec3 ws);
 
-		std::shared_ptr<Block> GetBlockLSUS(glm::ivec3 ls);
+		Block* GetBlockLSUS(glm::ivec3 ls);
 
-		std::shared_ptr<Block> GetBlockLS(glm::ivec3 ls);
+		Block* GetBlockLS(glm::ivec3 ls);
 
-		std::shared_ptr<Block> GetBlockWSEX(glm::ivec3 ws);
+		Block* GetBlockWSEX(glm::ivec3 ws);
 
-		void SetBlockLS(glm::ivec3 ls, std::shared_ptr<Block> block);
+		void SetBlockLS(glm::ivec3 ls, Block* block);
 
 		void Generate();
 
@@ -137,7 +140,7 @@ namespace FoxoCraft
 
 		void AddChunks();
 
-		std::shared_ptr<Block> GetBlockWS(glm::ivec3 ws);
+		Block* GetBlockWS(glm::ivec3 ws);
 
 		void Render();
 	};
