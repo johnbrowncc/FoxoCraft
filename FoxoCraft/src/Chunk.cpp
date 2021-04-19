@@ -4,7 +4,6 @@
 
 #include "debug-trap.h"
 
-#include "OpenSimplexNoise.h"
 #include "Log.h"
 
 #include <GLFW/glfw3.h>
@@ -214,7 +213,15 @@ namespace FoxoCraft
 
 	void Chunk::Generate()
 	{
-		OpenSimplexNoise noise = OpenSimplexNoise(0);
+		constexpr const std::array<glm::dvec2, 4> s_MapOffsets =
+		{
+			glm::dvec2(9134542, 312781),
+			glm::dvec2(3320191, -554605),
+			glm::dvec2(-9743106, 761011),
+			glm::dvec2(-4211348, -812416)
+		};
+
+		OpenSimplexNoise& noise = m_World->m_Generator.m_Generator;
 
 		Block* grass = GetBlock("core.grass");
 		Block* dirt = GetBlock("core.dirt");
@@ -232,12 +239,18 @@ namespace FoxoCraft
 			{
 				ws.x = ls.x + m_Pos.x * s_ChunkSize;
 
-				double height1 = noise.Evaluate(ws.x / 64.f, ws.z / 64.f) * 32.0f;
-				double height2 = noise.Evaluate(ws.x / 32.f, ws.z / 32.f) * 16.0f;
-				double height3 = noise.Evaluate(ws.x / 16.f, ws.z / 16.f) * 8.0f;
-				double height4 = noise.Evaluate(ws.x / 8.f, ws.z / 8.f) * 4.0f;
+				double dheight = 0.;
 
-				int height = static_cast<int>(height1 + height2 + height3 + height4);
+				double factor = 128.0f;
+				double factor2 = 64.0f;
+				for(size_t i = 0; i < s_MapOffsets.size(); ++i)
+				{
+					dheight += noise.Evaluate((ws.x + s_MapOffsets[i].x) / factor, (ws.z + s_MapOffsets[i].y) / factor) * factor2;
+					factor *= 0.5f;
+					factor2 *= 0.5f;
+				}
+
+				int height = static_cast<int>(dheight);
 
 				for (ls.y = 0; ls.y < s_ChunkSize; ++ls.y)
 				{
@@ -335,6 +348,17 @@ namespace FoxoCraft
 
 		glBindVertexArray(m_Vao);
 		glDrawArrays(GL_TRIANGLES, 0, m_Count);
+	}
+
+	WorldGenerator::WorldGenerator(int64_t seed)
+		: m_Seed(seed)
+	{
+		m_Generator = OpenSimplexNoise(seed);
+	}
+
+	World::World(int64_t seed)
+		: m_Generator(seed)
+	{
 	}
 
 	void World::AddChunks()

@@ -9,6 +9,8 @@
 #include <glm/glm.hpp>
 #include <glad/gl.h>
 
+#include "OpenSimplexNoise.h"
+
 namespace FoxoCraft
 {
 	inline constexpr size_t s_ChunkSize = 32;
@@ -92,8 +94,20 @@ namespace FoxoCraft
 		}
 	};
 
+	struct WorldGenerator
+	{
+		int64_t m_Seed;
+		OpenSimplexNoise m_Generator;
+
+		WorldGenerator(int64_t seed);
+	};
+
 	struct World
 	{
+		WorldGenerator m_Generator;
+
+		World(int64_t seed);
+
 		std::unordered_map<glm::ivec3, std::shared_ptr<Chunk>, KeyHash> m_Chunks;
 
 		void AddChunks();
