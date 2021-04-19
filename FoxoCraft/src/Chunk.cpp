@@ -2,6 +2,8 @@
 
 #include <unordered_map>
 
+#include "debug-trap.h"
+
 #include "OpenSimplexNoise.h"
 #include "Log.h"
 
@@ -127,7 +129,7 @@ namespace FoxoCraft
 		if (s_LockModify)
 		{
 			FE_LOG_ERROR("Registers have been locked, cannot modify further");
-			__debugbreak();
+			psnip_trap();
 			return;
 		}
 
@@ -139,7 +141,7 @@ namespace FoxoCraft
 		if (s_LockModify)
 		{
 			FE_LOG_ERROR("Registers have been locked, cannot modify further");
-			__debugbreak();
+			psnip_trap();
 			return;
 		}
 
