@@ -198,7 +198,8 @@ static int Run()
 	FoxoCraft::RegisterBlock("core.stone", FoxoCraft::Block(FoxoCraft::GetBlockFace("core.stone"), FoxoCraft::GetBlockFace("core.stone"), FoxoCraft::GetBlockFace("core.stone")));
 	FoxoCraft::LockModify(); // revent further changes to structures
 
-	int64_t seed = 0i64;
+	int64_t seed = FoxoCommons::GenerateValue(0i64, 1000000000i64);
+	float seed2 = FoxoCommons::GenerateValue(0.f, 100.f);
 	FoxoCraft::World world = FoxoCraft::World(seed);
 	world.AddChunks();
 
