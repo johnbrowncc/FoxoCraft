@@ -34,7 +34,8 @@ project "FoxoCraft"
 		"%{wks.location}/vendor/glfw/include",
 		"%{wks.location}/vendor/glm",
 		"%{wks.location}/vendor/spdlog/include",
-		"%{wks.location}/vendor/FoxoCommons/include"
+		"%{wks.location}/vendor/FoxoCommons/include",
+		"%{wks.location}/vendor/imgui"
 	}
 
 	defines
@@ -46,7 +47,8 @@ project "FoxoCraft"
 	{
 		"glad2",
 		"glfw",
-		"FoxoCommons"
+		"FoxoCommons",
+		"imgui"
 	}
 
 	filter "system:windows"
@@ -70,6 +72,45 @@ project "FoxoCraft"
 		optimize "on"
 
 group "Dependencies"
+
+project "imgui"
+	location "vendor/imgui"
+	kind "StaticLib"
+	language "C++"
+	cppdialect "C++17"
+
+	staticruntime "on"
+	systemversion "latest"
+
+	targetdir (outputbindir)
+	objdir (outputobjdir)
+
+	files
+	{
+		"%{prj.location}/*.cpp",
+		"%{prj.location}/backends/imgui_impl_glfw.cpp",
+		"%{prj.location}/backends/imgui_impl_opengl3.cpp"
+	}
+
+	includedirs
+	{
+		"%{prj.location}",
+		"%{wks.location}/vendor/glad2/include",
+		"%{wks.location}/vendor/glfw/include"
+	}
+
+	defines
+	{
+		"IMGUI_IMPL_OPENGL_LOADER_GLAD2"
+	}
+
+	filter "configurations:Debug"
+		runtime "Debug"
+		symbols "on"
+
+	filter "configurations:Release"
+		runtime "Release"
+		optimize "on"
 
 project "FoxoCommons"
 	location "vendor/FoxoCommons"

@@ -22,12 +22,18 @@
 
 #include "Chunk.h"
 
+#include <imgui.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_glfw.h>
+
 struct Camera
 {
 	FoxoCommons::Transform transform;
 
-	void Update(GLFWwindow* window, double deltaTime, float dx, float dy)
+	void Update(GLFWwindow* window, double deltaTime, float dx, float dy, bool mouseLocked)
 	{
+		if (!mouseLocked) return;
+
 		if (dx != 0.0f || dy != 0.0f)
 		{
 			glm::mat4 matrix = transform.Recompose();
@@ -157,7 +163,6 @@ static int Run()
 	if (!window.GetHandle()) return -1;
 
 	window.MakeContextCurrent();
-	window.SetInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	if (!gladLoadGL(glfwGetProcAddress))
 	{
@@ -169,6 +174,20 @@ static int Run()
 	spdlog::info(glGetString(GL_RENDERER));
 	spdlog::info(glGetString(GL_VERSION));
 	spdlog::info(glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void) io;
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsClassic();
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplGlfw_InitForOpenGL(window.GetHandle(), true);
+	ImGui_ImplOpenGL3_Init("#version 460 core");
 
 	FoxoCommons::Texture2DArray texture;
 	ModLoader::Load(texture);
@@ -226,6 +245,9 @@ static int Run()
 
 	Camera camera;
 
+	bool mouseLocked = false;
+	//window.SetInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 	while (!window.ShouldClose())
 	{
 		currentTime = glfwGetTime();
@@ -236,7 +258,39 @@ static int Run()
 		glfwPollEvents();
 		s_Storage.mouseDelta = s_Storage.mouseCurrent - s_Storage.mouseLast;
 
-		camera.Update(window.GetHandle(), deltaTime, s_Storage.mouseDelta.x, s_Storage.mouseDelta.y);
+		// Lock the mouse
+		if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
+		{
+			if (!mouseLocked)
+			{
+				mouseLocked = true;
+				window.SetInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
+			}
+		}
+		else if (glfwGetKey(window.GetHandle(), GLFW_KEY_ESCAPE))
+		{
+			if (mouseLocked)
+			{
+				mouseLocked = false;
+				window.SetInputMode(GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+				ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+			}
+		}
+
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+		ImGui::ShowDemoWindow();
+
+		
+
+		
+
+		///
+
+		camera.Update(window.GetHandle(), deltaTime, s_Storage.mouseDelta.x, s_Storage.mouseDelta.y, mouseLocked);
 
 		auto [w, h] = window.GetSize();
 
@@ -252,6 +306,10 @@ static int Run()
 		program.Uniform1i("u_Albedo", 0);
 
 		world.Render();
+
+		// Rendering
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		window.SwapBuffers();
 	}
