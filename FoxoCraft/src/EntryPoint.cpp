@@ -277,7 +277,7 @@ static void ImGuiDestroy()
 	ImGui::DestroyContext();
 }
 
-static int Run()
+int main()
 {
 	FoxoCommons::Window window = FoxoCommons::Window(1280, 720, "FoxoCraft", []()
 	{
@@ -297,10 +297,10 @@ static int Run()
 		return -1;
 	}
 
-	spdlog::info(glGetString(GL_VENDOR));
-	spdlog::info(glGetString(GL_RENDERER));
-	spdlog::info(glGetString(GL_VERSION));
-	spdlog::info(glGetString(GL_SHADING_LANGUAGE_VERSION));
+	FC_LOG_INFO(glGetString(GL_VENDOR));
+	FC_LOG_INFO(glGetString(GL_RENDERER));
+	FC_LOG_INFO(glGetString(GL_VERSION));
+	FC_LOG_INFO(glGetString(GL_SHADING_LANGUAGE_VERSION));
 
 	ImGuiInit(window);
 
@@ -314,7 +314,7 @@ static int Run()
 	FoxoCraft::LockModify(); // prevent further changes to structures
 
 	int64_t seed = FoxoCommons::GenerateValue(std::numeric_limits<int64_t>::lowest(), std::numeric_limits<int64_t>::max());
-	FE_LOG_INFO("Using seed: {}", seed);
+	FC_LOG_INFO("Using seed: {}", seed);
 	FoxoCraft::World world = FoxoCraft::World(seed);
 	world.AddChunks();
 
@@ -340,7 +340,7 @@ static int Run()
 		}
 		else
 		{
-			FE_LOG_ERROR("Failed to load shaders");
+			FC_LOG_INFO("Failed to load shaders");
 		}
 	}
 
@@ -414,7 +414,7 @@ static int Run()
 		glClearColor(0.7f, 0.8f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		if(enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		if (enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 		texture.Bind(0);
 		program.Bind();
@@ -442,12 +442,4 @@ static int Run()
 	ImGuiDestroy();
 
 	return 0;
-}
-
-int main()
-{
-	FoxoEngine::CreateLogger();
-	int status = Run();
-	FoxoEngine::DestroyLogger();
-	return status;
 }

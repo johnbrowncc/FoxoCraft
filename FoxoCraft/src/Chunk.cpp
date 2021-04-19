@@ -127,7 +127,7 @@ namespace FoxoCraft
 	{
 		if (s_LockModify)
 		{
-			FE_LOG_ERROR("Registers have been locked, cannot modify further");
+			FC_LOG_ERROR("Registers have been locked, cannot modify further");
 			psnip_trap();
 			return;
 		}
@@ -139,7 +139,7 @@ namespace FoxoCraft
 	{
 		if (s_LockModify)
 		{
-			FE_LOG_ERROR("Registers have been locked, cannot modify further");
+			FC_LOG_ERROR("Registers have been locked, cannot modify further");
 			psnip_trap();
 			return;
 		}
@@ -383,7 +383,7 @@ namespace FoxoCraft
 		}
 
 		timer = glfwGetTime() - timer;
-		FE_LOG_INFO("World gen took {}s", timer);
+		FC_LOG_INFO("World gen took {}s", timer);
 
 		timer = glfwGetTime();
 
@@ -393,7 +393,7 @@ namespace FoxoCraft
 		}
 
 		timer = glfwGetTime() - timer;
-		FE_LOG_INFO("World build took {}s", timer);
+		FC_LOG_INFO("World build took {}s", timer);
 	}
 
 	Block* World::GetBlockWS(glm::vec3 ws)
