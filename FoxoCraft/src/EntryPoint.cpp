@@ -1,6 +1,7 @@
 #include <glad/gl.h>
 #include <spdlog/spdlog.h>
 #include <unordered_map>
+#include <filesystem>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/norm.hpp>
@@ -401,6 +402,81 @@ struct World
 	}
 };
 
+struct ModLoader
+{
+	static void Load(FoxoCommons::Texture2DArray& gpuTexture)
+	{
+		struct TextureInfo
+		{
+			std::string m_FileName;
+			std::string m_Id;
+
+			TextureInfo(std::string_view filename, std::string_view id)
+			{
+				m_FileName = filename;
+				m_Id = id;
+			}
+
+			int w = 0, h = 0, c = 0;
+			stbi_uc* pixels = nullptr;
+		};
+
+		std::vector<TextureInfo> textures;
+
+		// Discover modlist
+		std::vector<std::string> mods;
+		for (const auto& entry : std::filesystem::directory_iterator("FoxoCraft/mods"))
+		{
+			mods.push_back(entry.path().filename().u8string());
+		}
+
+		// Load textures for each mod
+		for (const auto& mod : mods)
+		{
+			for (const auto& entry : std::filesystem::directory_iterator("FoxoCraft/mods/" + mod + "/textures"))
+			{
+				std::string texturePath = entry.path().u8string();
+				std::string textureName = entry.path().filename().u8string();
+				textureName = textureName.substr(0, textureName.find_last_of("."));
+
+				textures.emplace_back(texturePath, mod + '.' + textureName);
+			}
+		}
+
+		stbi_set_flip_vertically_on_load(true);
+
+		for (auto& texture : textures)
+		{
+			texture.pixels = stbi_load(texture.m_FileName.data(), &texture.w, &texture.h, &texture.c, 4);
+		}
+
+		int largestWidth = 0, largestHeight = 0;
+
+		for (auto& texture : textures)
+		{
+			if (texture.w > largestWidth) largestWidth = texture.w;
+			if (texture.h > largestHeight) largestHeight = texture.h;
+		}
+
+		gpuTexture = FoxoCommons::Texture2DArray(GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_RGBA8, largestWidth, largestHeight, textures.size(), true);
+
+		for (size_t i = 0; i < textures.size(); ++i)
+		{
+			auto& texture = textures[i];
+
+			s_BlockFaces[texture.m_Id] = std::make_shared<BlockFace>(i);
+
+			if (texture.pixels)
+			{
+				gpuTexture.SubImage(0, 0, i, texture.w, texture.h, 1, GL_RGBA, GL_UNSIGNED_BYTE, texture.pixels);
+				stbi_image_free(texture.pixels);
+			}
+		}
+
+		gpuTexture.GenerateMipmaps();
+	}
+};
+
 static int Run()
 {
 	FoxoCommons::Window window = FoxoCommons::Window(1280, 720, "FoxoCraft", []()
@@ -427,68 +503,13 @@ static int Run()
 	spdlog::info(glGetString(GL_VERSION));
 	spdlog::info(glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+	FoxoCommons::Texture2DArray texture;
+	ModLoader::Load(texture);
+
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 	glEnable(GL_DEPTH_TEST);
-
-	FoxoCommons::Texture2DArray texture;
-	{
-		struct BlockFaceBuilder
-		{
-			std::string m_FileName;
-			std::string m_Id;
-
-			BlockFaceBuilder(std::string_view filename, std::string_view id)
-			{
-				m_FileName = filename;
-				m_Id = id;
-			}
-
-			int w = 0, h = 0, c = 0;
-			stbi_uc* pixels = nullptr;
-		};
-
-		std::vector<BlockFaceBuilder> faces;
-		faces.reserve(5);
-		faces.emplace_back("res/textures/grass.png", "core.grass");
-		faces.emplace_back("res/textures/stone.png", "core.stone");
-		faces.emplace_back("res/textures/grass_side.png", "core.grass_side");
-		faces.emplace_back("res/textures/dirt.png", "core.dirt");
-		faces.emplace_back("res/textures/wood.png", "core.wood");
-
-		stbi_set_flip_vertically_on_load(true);
-		
-		for (auto& face : faces)
-		{
-			face.pixels = stbi_load(face.m_FileName.data(), &face.w, &face.h, &face.c, 4);	
-		}
-
-		int largestWidth = 0, largestHeight = 0;
-
-		for (auto& face : faces)
-		{
-			if (face.w > largestWidth) largestWidth = face.w;
-			if (face.h > largestHeight) largestHeight = face.h;
-		}
-
-		texture = FoxoCommons::Texture2DArray(GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_RGBA8, largestWidth, largestHeight, faces.size(), true);
-
-		for (size_t i = 0; i < faces.size(); ++i)
-		{
-			auto& face = faces[i];
-
-			s_BlockFaces[face.m_Id] = std::make_shared<BlockFace>(i);
-
-			if (face.pixels)
-			{
-				texture.SubImage(0, 0, i, face.w, face.h, 1, GL_RGBA, GL_UNSIGNED_BYTE, face.pixels);
-				stbi_image_free(face.pixels);
-			}
-		}
-
-		texture.GenerateMipmaps();
-	}
 
 	{
 		s_Blocks["core.grass"] = std::make_shared<Block>(GetBlockFace("core.grass"), GetBlockFace("core.grass_side"), GetBlockFace("core.dirt"));
