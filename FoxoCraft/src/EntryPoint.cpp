@@ -32,7 +32,12 @@ struct Camera
 {
 	FoxoCommons::Transform transform;
 
-	void Update(GLFWwindow* window, double deltaTime, float dx, float dy, bool mouseLocked)
+	Camera()
+	{
+		transform.m_Pos.y = 80;
+	}
+
+	void Update(GLFWwindow* window, double deltaTime, float dx, float dy, bool mouseLocked, FoxoCraft::World& world)
 	{
 		if (!mouseLocked) return;
 
@@ -63,13 +68,24 @@ struct Camera
 
 		if (glm::length2(movement) > 0)
 		{
+			
+
 			glm::mat4 matrix = transform.Recompose();
 
 			movement = glm::normalize(movement) * speed * static_cast<float>(deltaTime);
 
 			matrix = glm::translate(matrix, glm::vec3(movement));
 			matrix = glm::translate(matrix, glm::vec3(glm::inverse(matrix) * glm::vec4(0, 1, 0, 0)) * movement.w);
-			transform.Decompose(matrix);
+
+			FoxoCommons::Transform newTransform;
+			newTransform.Decompose(matrix);
+
+			FoxoCraft::Block* block = world.GetBlockWS(newTransform.m_Pos);
+
+			if (!block)
+			{
+				transform = newTransform;
+			}
 		}
 	}
 };
@@ -250,7 +266,6 @@ static int Run()
 	deltaTime = 1.;
 
 	Camera camera;
-
 	bool mouseLocked = false;
 
 	while (!window.ShouldClose())
@@ -295,7 +310,7 @@ static int Run()
 		}
 		ImGui::End();
 
-		camera.Update(window.GetHandle(), deltaTime, s_Storage.mouseDelta.x, s_Storage.mouseDelta.y, mouseLocked);
+		camera.Update(window.GetHandle(), deltaTime, s_Storage.mouseDelta.x, s_Storage.mouseDelta.y, mouseLocked, world);
 
 		auto [w, h] = window.GetSize();
 

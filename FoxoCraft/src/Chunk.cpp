@@ -396,6 +396,11 @@ namespace FoxoCraft
 		FE_LOG_INFO("World build took {}s", timer);
 	}
 
+	Block* World::GetBlockWS(glm::vec3 ws)
+	{
+		return GetBlockWS(glm::ivec3(glm::floor(ws)));
+	}
+
 	Block* World::GetBlockWS(glm::ivec3 ws)
 	{
 		glm::ivec3 cs;

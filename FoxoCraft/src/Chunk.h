@@ -113,6 +113,7 @@ namespace FoxoCraft
 		void AddChunks();
 
 		Block* GetBlockWS(glm::ivec3 ws);
+		Block* GetBlockWS(glm::vec3 ws);
 
 		void Render();
 	};
