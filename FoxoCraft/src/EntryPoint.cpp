@@ -26,6 +26,8 @@
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_glfw.h>
 
+#include <limits>
+
 struct Camera
 {
 	FoxoCommons::Transform transform;
@@ -198,12 +200,10 @@ static int Run()
 	FoxoCraft::RegisterBlock("core.stone", FoxoCraft::Block(FoxoCraft::GetBlockFace("core.stone"), FoxoCraft::GetBlockFace("core.stone"), FoxoCraft::GetBlockFace("core.stone")));
 	FoxoCraft::LockModify(); // revent further changes to structures
 
-	int64_t seed = FoxoCommons::GenerateValue(0i64, 1000000000i64);
-	float seed2 = FoxoCommons::GenerateValue(0.f, 100.f);
+	int64_t seed = FoxoCommons::GenerateValue(std::numeric_limits<int64_t>::lowest(), std::numeric_limits<int64_t>::max());
+	FE_LOG_INFO("Using seed: {}", seed);
 	FoxoCraft::World world = FoxoCraft::World(seed);
 	world.AddChunks();
-
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -248,7 +248,6 @@ static int Run()
 	Camera camera;
 
 	bool mouseLocked = false;
-	//window.SetInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	while (!window.ShouldClose())
 	{
@@ -284,9 +283,11 @@ static int Run()
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
+		static bool enableWireframe = false;
+
 		if (ImGui::Begin("Debug"))
 		{
-			ImGui::Text("OvO");
+			ImGui::Checkbox("Enable Wireframe", &enableWireframe);
 		}
 		ImGui::End();
 
@@ -298,6 +299,8 @@ static int Run()
 		glClearColor(0.7f, 0.8f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		if(enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 		texture.Bind(0);
 		program.Bind();
 		program.UniformMat4f("u_Projection", glm::infinitePerspective(glm::radians(70.f), window.GetAspect(), 0.01f));
@@ -306,6 +309,9 @@ static int Run()
 		program.Uniform1i("u_Albedo", 0);
 
 		world.Render();
+
+
+		if (enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		// Rendering
 		ImGui::Render();
