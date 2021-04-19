@@ -410,7 +410,7 @@ static int Run()
 
 		texture.Bind(0);
 		program.Bind();
-		program.UniformMat4f("u_Projection", glm::infinitePerspective(glm::radians(70.f), window.GetAspect(), 0.01f));
+		program.UniformMat4f("u_Projection", glm::infinitePerspective(glm::radians(90.f), window.GetAspect(), 0.01f));
 		//program.UniformMat4f("u_View", glm::inverse(camera.transform.Recompose()));
 		FoxoCommons::Transform t = player.m_Transform;
 		t.m_Pos.y += 1.6f;
