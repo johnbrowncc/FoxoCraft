@@ -195,14 +195,18 @@ static constexpr size_t s_ChunkSize = 32;
 static constexpr size_t s_ChunkSize2 = s_ChunkSize * s_ChunkSize;
 static constexpr size_t s_ChunkSize3 = s_ChunkSize * s_ChunkSize * s_ChunkSize;
 
+struct World;
+
 struct ChunkData
 {
 	int m_X, m_Y, m_Z;
 
 	std::array<std::shared_ptr<Block>, s_ChunkSize3> blocks;
+	std::weak_ptr<World> m_World;
 
-	ChunkData(int x, int y, int z)
+	ChunkData(int x, int y, int z, std::shared_ptr<World> world)
 	{
+		m_World = world;
 		m_X = x;
 		m_Y = y;
 		m_Z = z;
@@ -295,67 +299,7 @@ struct ChunkData
 		}
 	}
 
-	void BuildMeshV2()
-	{
-		std::vector<float> data;
-		m_Count = 0;
-
-		for (int z = 0; z < s_ChunkSize; ++z)
-		{
-			int wz = z + m_Z * s_ChunkSize;
-
-			for (int y = 0; y < s_ChunkSize; ++y)
-			{
-				int wy = y + m_Y * s_ChunkSize;
-
-				for (int x = 0; x < s_ChunkSize; ++x)
-				{
-					int wx = x + m_X * s_ChunkSize;
-
-					std::shared_ptr<Block> block = GetBlock(x, y, z);
-					if (!block) continue;
-
-					if (!GetBlock(x - 1, y, z)) Faces::AppendFace(data, 0, wx, wy, wz, block->m_Side->m_TextureIndex, m_Count);
-					if (!GetBlock(x + 1, y, z)) Faces::AppendFace(data, 1, wx, wy, wz, block->m_Side->m_TextureIndex, m_Count);
-					if (!GetBlock(x, y - 1, z)) Faces::AppendFace(data, 2, wx, wy, wz, block->m_Bottom->m_TextureIndex, m_Count);
-					if (!GetBlock(x, y + 1, z)) Faces::AppendFace(data, 3, wx, wy, wz, block->m_Top->m_TextureIndex, m_Count);
-					if (!GetBlock(x, y, z - 1)) Faces::AppendFace(data, 4, wx, wy, wz, block->m_Side->m_TextureIndex, m_Count);
-					if (!GetBlock(x, y, z + 1)) Faces::AppendFace(data, 5, wx, wy, wz, block->m_Side->m_TextureIndex, m_Count);
-				}
-			}
-		}
-
-		if (m_Vao != 0)
-		{
-			glDeleteVertexArrays(1, &m_Vao);
-			m_Vao = 0;
-		}
-
-		if (m_Vbo != 0)
-		{
-			glDeleteBuffers(1, &m_Vbo);
-			m_Vbo = 0;
-		}
-
-		// no data was in the chunk, dont create gpu information
-		if (data.size() != 0)
-		{
-			glCreateBuffers(1, &m_Vbo);
-			glNamedBufferStorage(m_Vbo, data.size() * sizeof(float), data.data(), GL_NONE);
-
-			glCreateVertexArrays(1, &m_Vao);
-			glVertexArrayVertexBuffer(m_Vao, 0, m_Vbo, 0, 9 * sizeof(float));
-			glEnableVertexArrayAttrib(m_Vao, 0);
-			glEnableVertexArrayAttrib(m_Vao, 1);
-			glEnableVertexArrayAttrib(m_Vao, 2);
-			glVertexArrayAttribFormat(m_Vao, 0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(float));
-			glVertexArrayAttribFormat(m_Vao, 1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float));
-			glVertexArrayAttribFormat(m_Vao, 2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float));
-			glVertexArrayAttribBinding(m_Vao, 0, 0);
-			glVertexArrayAttribBinding(m_Vao, 1, 0);
-			glVertexArrayAttribBinding(m_Vao, 2, 0);
-		}
-	}
+	void BuildMeshV2();
 
 	int m_Count = 0;
 	GLuint m_Vao = 0;
@@ -370,11 +314,16 @@ struct ChunkData
 	}
 };
 
-struct World
+struct World : std::enable_shared_from_this<World>
 {
 	std::vector<std::shared_ptr<ChunkData>> m_Chunks;
 
 	World()
+	{
+		
+	}
+
+	void AddChunks()
 	{
 		int radius = 3;
 
@@ -384,13 +333,40 @@ struct World
 			{
 				for (int x = -radius; x <= radius; ++x)
 				{
-					std::shared_ptr<ChunkData> chunk = std::make_shared<ChunkData>(x, y, z);
+					std::shared_ptr<ChunkData> chunk = std::make_shared<ChunkData>(x, y, z, shared_from_this());
 					chunk->Generate();
 					chunk->BuildMeshV2();
 					m_Chunks.push_back(chunk);
 				}
 			}
 		}
+	}
+
+	std::shared_ptr<Block> GetBlock(int x, int y, int z)
+	{
+		int cx = static_cast<int>(glm::floor(static_cast<float>(x) / static_cast<float>(s_ChunkSize)));
+		int cy = static_cast<int>(glm::floor(static_cast<float>(y) / static_cast<float>(s_ChunkSize)));
+		int cz = static_cast<int>(glm::floor(static_cast<float>(z) / static_cast<float>(s_ChunkSize)));
+		
+		std::shared_ptr<ChunkData> foundchunk;
+
+		for (std::shared_ptr<ChunkData> chunk : m_Chunks)
+		{
+			if (chunk->m_X == cx && chunk->m_Y == cy && chunk->m_Z == cz)
+			{
+				foundchunk = chunk;
+				break;
+			}
+		}
+
+		if (!foundchunk)
+			return nullptr;
+
+		int lx = x - cx * s_ChunkSize;
+		int ly = y - cy * s_ChunkSize;
+		int lz = z - cz * s_ChunkSize;
+
+		return foundchunk->GetBlock(lx, ly, lz);
 	}
 
 	void Render()
@@ -401,6 +377,68 @@ struct World
 		}
 	}
 };
+
+void ChunkData::BuildMeshV2()
+{
+	std::vector<float> data;
+	m_Count = 0;
+
+	for (int z = 0; z < s_ChunkSize; ++z)
+	{
+		int wz = z + m_Z * s_ChunkSize;
+
+		for (int y = 0; y < s_ChunkSize; ++y)
+		{
+			int wy = y + m_Y * s_ChunkSize;
+
+			for (int x = 0; x < s_ChunkSize; ++x)
+			{
+				int wx = x + m_X * s_ChunkSize;
+
+				std::shared_ptr<Block> block = GetBlock(x, y, z);
+				if (!block) continue;
+
+				if (!GetBlock(x - 1, y, z)) Faces::AppendFace(data, 0, wx, wy, wz, block->m_Side->m_TextureIndex, m_Count);
+				if (!GetBlock(x + 1, y, z)) Faces::AppendFace(data, 1, wx, wy, wz, block->m_Side->m_TextureIndex, m_Count);
+				if (!GetBlock(x, y - 1, z)) Faces::AppendFace(data, 2, wx, wy, wz, block->m_Bottom->m_TextureIndex, m_Count);
+				if (!GetBlock(x, y + 1, z)) Faces::AppendFace(data, 3, wx, wy, wz, block->m_Top->m_TextureIndex, m_Count);
+				if (!GetBlock(x, y, z - 1)) Faces::AppendFace(data, 4, wx, wy, wz, block->m_Side->m_TextureIndex, m_Count);
+				if (!GetBlock(x, y, z + 1)) Faces::AppendFace(data, 5, wx, wy, wz, block->m_Side->m_TextureIndex, m_Count);
+			}
+		}
+	}
+
+	if (m_Vao != 0)
+	{
+		glDeleteVertexArrays(1, &m_Vao);
+		m_Vao = 0;
+	}
+
+	if (m_Vbo != 0)
+	{
+		glDeleteBuffers(1, &m_Vbo);
+		m_Vbo = 0;
+	}
+
+	// no data was in the chunk, dont create gpu information
+	if (data.size() != 0)
+	{
+		glCreateBuffers(1, &m_Vbo);
+		glNamedBufferStorage(m_Vbo, data.size() * sizeof(float), data.data(), GL_NONE);
+
+		glCreateVertexArrays(1, &m_Vao);
+		glVertexArrayVertexBuffer(m_Vao, 0, m_Vbo, 0, 9 * sizeof(float));
+		glEnableVertexArrayAttrib(m_Vao, 0);
+		glEnableVertexArrayAttrib(m_Vao, 1);
+		glEnableVertexArrayAttrib(m_Vao, 2);
+		glVertexArrayAttribFormat(m_Vao, 0, 3, GL_FLOAT, GL_FALSE, 0 * sizeof(float));
+		glVertexArrayAttribFormat(m_Vao, 1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float));
+		glVertexArrayAttribFormat(m_Vao, 2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float));
+		glVertexArrayAttribBinding(m_Vao, 0, 0);
+		glVertexArrayAttribBinding(m_Vao, 1, 0);
+		glVertexArrayAttribBinding(m_Vao, 2, 0);
+	}
+}
 
 struct ModLoader
 {
@@ -518,7 +556,8 @@ static int Run()
 		s_Blocks["core.stone"] = std::make_shared<Block>(GetBlockFace("core.stone"), GetBlockFace("core.stone"), GetBlockFace("core.stone"));
 	}
 
-	World world;
+	std::shared_ptr<World> world = std::make_shared<World>();
+	world->AddChunks();
 
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -584,13 +623,10 @@ static int Run()
 		program.UniformMat4f("u_Model", glm::mat4(1.0f));
 		program.Uniform1i("u_Albedo", 0);
 
-		world.Render();
+		world->Render();
 
 		window.SwapBuffers();
 	}
-
-	//chunk0 = nullptr;
-	//chunk1 = nullptr;
 
 	return 0;
 }
