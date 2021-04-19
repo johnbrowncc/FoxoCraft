@@ -139,11 +139,26 @@ struct Player
 	}
 };
 
-struct Camera
+struct Camera final
+{
+	float m_Fov = 90.f;
+	float m_Near = 0.01f;
+	float m_Aspect = 1.f;
+
+	glm::mat4 Calculate()
+	{
+		return glm::infinitePerspective(glm::radians(m_Fov), m_Aspect, m_Near);
+	}
+};
+
+/// <summary>
+/// Will be changed into a flycam, not currently used
+/// </summary>
+struct Deprecated_Camera
 {
 	FoxoCommons::Transform transform;
 
-	Camera()
+	Deprecated_Camera()
 	{
 		transform.m_Pos.y = 80;
 	}
@@ -179,8 +194,6 @@ struct Camera
 
 		if (glm::length2(movement) > 0)
 		{
-			
-
 			glm::mat4 matrix = transform.Recompose();
 
 			movement = glm::normalize(movement) * speed * static_cast<float>(deltaTime);
@@ -383,7 +396,7 @@ int main()
 	lastTime = glfwGetTime();
 	deltaTime = 1.;
 
-	//Camera camera;
+	Camera camera;
 	Player player;
 
 	while (!window.ShouldClose())
@@ -417,6 +430,7 @@ int main()
 		player.Update(window.GetHandle(), deltaTime, s_Storage.mouseDelta, world);
 
 		auto [w, h] = window.GetSize();
+		camera.m_Aspect = window.GetAspect();
 
 		glViewport(0, 0, w, h);
 		glClearColor(0.7f, 0.8f, 0.9f, 1.0f);
@@ -426,8 +440,7 @@ int main()
 
 		texture.Bind(0);
 		program.Bind();
-		program.UniformMat4f("u_Projection", glm::infinitePerspective(glm::radians(90.f), window.GetAspect(), 0.01f));
-		//program.UniformMat4f("u_View", glm::inverse(camera.transform.Recompose()));
+		program.UniformMat4f("u_Projection", camera.Calculate());
 		FoxoCommons::Transform t = player.m_Transform;
 		t.m_Pos.y += 1.6f;
 
@@ -436,7 +449,6 @@ int main()
 		program.Uniform1i("u_Albedo", 0);
 
 		world.Render();
-
 
 		if (enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
