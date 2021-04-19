@@ -64,7 +64,7 @@ project "FoxoCraft"
 		}
 
 	filter "system:linux"
-		buildoptions
+		linkoptions
 		{
 			"-ldl",
 			"-pthread"
