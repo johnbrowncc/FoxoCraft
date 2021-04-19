@@ -285,7 +285,9 @@ namespace FoxoCraft
 			ImGui::Checkbox("Enable Wireframe", &enableWireframe);
 
 			ImGui::Separator();
-			ImGui::Text("Player Pos");
+			ImGui::Text("Player Pos: UwU");
+			
+			// This is how you correctly Do it -> For Nicholas Uwu
 			ImGui::Text("X: %i", static_cast<int>(m_Player.m_Transform.m_Pos.x));
 			ImGui::Text("Y: %i", static_cast<int>(m_Player.m_Transform.m_Pos.y));
 			ImGui::Text("Z: %i", static_cast<int>(m_Player.m_Transform.m_Pos.z));
