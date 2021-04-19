@@ -5,10 +5,63 @@
 #include "OpenSimplexNoise.h"
 #include "Log.h"
 
+#include <GLFW/glfw3.h>
+
 namespace FoxoCraft
 {
 	namespace Faces
 	{
+		static constexpr size_t s_NumFaces = 6;
+		static constexpr size_t s_NumVerts = 6;
+		static constexpr size_t s_Count = 9 * s_NumVerts;
+
+		// px py pz nx ny nz tx ty tz
+		static constexpr float data[s_Count * s_NumFaces] =
+		{
+			// left
+			0, 0, 0, -1, 0, 0, 0, 0, 0,
+			0, 0, 1, -1, 0, 0, 1, 0, 0,
+			0, 1, 0, -1, 0, 0, 0, 1, 0,
+			0, 1, 1, -1, 0, 0, 1, 1, 0,
+			0, 1, 0, -1, 0, 0, 0, 1, 0,
+			0, 0, 1, -1, 0, 0, 1, 0, 0,
+			// right
+			1, 0, 1, 1, 0, 0, 0, 0, 0,
+			1, 0, 0, 1, 0, 0, 1, 0, 0,
+			1, 1, 1, 1, 0, 0, 0, 1, 0,
+			1, 1, 0, 1, 0, 0, 1, 1, 0,
+			1, 1, 1, 1, 0, 0, 0, 1, 0,
+			1, 0, 0, 1, 0, 0, 1, 0, 0,
+			// bottom
+			0, 0, 0, 0, -1, 0, 0, 0, 0,
+			1, 0, 0, 0, -1, 0, 1, 0, 0,
+			0, 0, 1, 0, -1, 0, 0, 1, 0,
+			1, 0, 1, 0, -1, 0, 1, 1, 0,
+			0, 0, 1, 0, -1, 0, 0, 1, 0,
+			1, 0, 0, 0, -1, 0, 1, 0, 0,
+			// top
+			0, 1, 1, 0, 1, 0, 0, 0, 0,
+			1, 1, 1, 0, 1, 0, 1, 0, 0,
+			0, 1, 0, 0, 1, 0, 0, 1, 0,
+			1, 1, 0, 0, 1, 0, 1, 1, 0,
+			0, 1, 0, 0, 1, 0, 0, 1, 0,
+			1, 1, 1, 0, 1, 0, 1, 0, 0,
+			// back
+			1, 0, 0, 0, 0, -1, 0, 0, 0,
+			0, 0, 0, 0, 0, -1, 1, 0, 0,
+			1, 1, 0, 0, 0, -1, 0, 1, 0,
+			0, 1, 0, 0, 0, -1, 1, 1, 0,
+			1, 1, 0, 0, 0, -1, 0, 1, 0,
+			0, 0, 0, 0, 0, -1, 1, 0, 0,
+			// front
+			0, 0, 1, 0, 0, 1, 0, 0, 0,
+			1, 0, 1, 0, 0, 1, 1, 0, 0,
+			0, 1, 1, 0, 0, 1, 0, 1, 0,
+			1, 1, 1, 0, 0, 1, 1, 1, 0,
+			0, 1, 1, 0, 0, 1, 0, 1, 0,
+			1, 0, 1, 0, 0, 1, 1, 0, 0
+		};
+
 		const float* GetFacePointer(size_t faceIndex)
 		{
 			return data + faceIndex * s_Count;
@@ -281,6 +334,8 @@ namespace FoxoCraft
 
 		glm::ivec3 cs;
 
+		double timer = glfwGetTime();
+
 		for (cs.z = -radius; cs.z <= radius; ++cs.z)
 		{
 			for (cs.y = -radius; cs.y <= radius; ++cs.y)
@@ -294,10 +349,18 @@ namespace FoxoCraft
 			}
 		}
 
+		timer = glfwGetTime() - timer;
+		FE_LOG_INFO("World gen took {}s", timer);
+
+		timer = glfwGetTime();
+
 		for (auto& chunk : m_Chunks)
 		{
 			chunk->BuildMeshV2();
 		}
+
+		timer = glfwGetTime() - timer;
+		FE_LOG_INFO("World build took {}s", timer);
 	}
 
 	Block* World::GetBlockWS(glm::ivec3 ws)
