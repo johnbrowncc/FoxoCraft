@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include <glm/glm.hpp>
 #include <glad/gl.h>
@@ -83,9 +84,17 @@ namespace FoxoCraft
 		void Render();
 	};
 
+	struct KeyHash
+	{
+		size_t operator()(const glm::ivec3& k) const
+		{
+			return std::hash<int>()(k.x) ^ std::hash<int>()(k.y) ^ std::hash<int>()(k.z);
+		}
+	};
+
 	struct World
 	{
-		std::vector<std::shared_ptr<Chunk>> m_Chunks;
+		std::unordered_map<glm::ivec3, std::shared_ptr<Chunk>, KeyHash> m_Chunks;
 
 		void AddChunks();
 

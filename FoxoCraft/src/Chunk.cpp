@@ -284,6 +284,13 @@ namespace FoxoCraft
 					if (!GetBlockWSEX(ws + glm::ivec3(0, 1, 0))) Faces::AppendFace(data, 3, ws, block->m_Top->m_TextureIndex, m_Count);
 					if (!GetBlockWSEX(ws + glm::ivec3(0, 0, -1))) Faces::AppendFace(data, 4, ws, block->m_Side->m_TextureIndex, m_Count);
 					if (!GetBlockWSEX(ws + glm::ivec3(0, 0, 1))) Faces::AppendFace(data, 5, ws, block->m_Side->m_TextureIndex, m_Count);
+
+					/*if (!GetBlockLS(ls + glm::ivec3(-1, 0, 0))) Faces::AppendFace(data, 0, ws, block->m_Side->m_TextureIndex, m_Count);
+					if (!GetBlockLS(ls + glm::ivec3(1, 0, 0))) Faces::AppendFace(data, 1, ws, block->m_Side->m_TextureIndex, m_Count);
+					if (!GetBlockLS(ls + glm::ivec3(0, -1, 0))) Faces::AppendFace(data, 2, ws, block->m_Bottom->m_TextureIndex, m_Count);
+					if (!GetBlockLS(ls + glm::ivec3(0, 1, 0))) Faces::AppendFace(data, 3, ws, block->m_Top->m_TextureIndex, m_Count);
+					if (!GetBlockLS(ls + glm::ivec3(0, 0, -1))) Faces::AppendFace(data, 4, ws, block->m_Side->m_TextureIndex, m_Count);
+					if (!GetBlockLS(ls + glm::ivec3(0, 0, 1))) Faces::AppendFace(data, 5, ws, block->m_Side->m_TextureIndex, m_Count);*/
 				}
 			}
 		}
@@ -344,7 +351,7 @@ namespace FoxoCraft
 				{
 					std::shared_ptr<Chunk> chunk = std::make_shared<Chunk>(cs, this);
 					chunk->Generate();
-					m_Chunks.push_back(chunk);
+					m_Chunks[cs] = chunk;
 				}
 			}
 		}
@@ -354,9 +361,9 @@ namespace FoxoCraft
 
 		timer = glfwGetTime();
 
-		for (auto& chunk : m_Chunks)
+		for (auto& [k, v] : m_Chunks)
 		{
-			chunk->BuildMeshV2();
+			v->BuildMeshV2();
 		}
 
 		timer = glfwGetTime() - timer;
@@ -370,29 +377,21 @@ namespace FoxoCraft
 		cs.y = static_cast<int>(glm::floor(static_cast<float>(ws.y) / static_cast<float>(s_ChunkSize)));
 		cs.z = static_cast<int>(glm::floor(static_cast<float>(ws.z) / static_cast<float>(s_ChunkSize)));
 
-		std::shared_ptr<Chunk> foundchunk = nullptr;
+		auto result = m_Chunks.find(cs);
 
-		for (std::shared_ptr<Chunk>& chunk : m_Chunks)
-		{
-			if (chunk->m_Pos == cs)
-			{
-				foundchunk = chunk;
-				break;
-			}
-		}
-
-		if (!foundchunk) return nullptr;
+		if (result == m_Chunks.end())
+			return nullptr;
 
 		glm::ivec3 ls = ws - cs * static_cast<int>(s_ChunkSize);
 
-		return foundchunk->GetBlockLS(ls);
+		return result->second->GetBlockLS(ls);
 	}
 
 	void World::Render()
 	{
-		for (auto chunk : m_Chunks)
+		for (auto& [k, v] : m_Chunks)
 		{
-			chunk->Render();
+			v->Render();
 		}
 	}
 }
