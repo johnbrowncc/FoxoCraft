@@ -28,6 +28,34 @@
 
 #include <limits>
 
+namespace MouseLock
+{
+	static bool s_Locked = false;
+
+	bool IsLocked()
+	{
+		return s_Locked;
+	}
+
+	void Lock(FoxoCommons::Window& window)
+	{
+		if (s_Locked) return;
+		s_Locked = true;
+
+		window.SetInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
+	}
+
+	void Unlock(FoxoCommons::Window& window)
+	{
+		if (!s_Locked) return;
+		s_Locked = false;
+
+		window.SetInputMode(GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+	}
+}
+
 struct Player
 {
 	FoxoCommons::Transform m_Transform;
@@ -40,9 +68,9 @@ struct Player
 		m_Transform.m_Pos.y = 80;
 	}
 
-	void Update(GLFWwindow* window, double deltaTime, glm::vec2 mouseDelta, bool mouseLocked, FoxoCraft::World& world)
+	void Update(GLFWwindow* window, double deltaTime, glm::vec2 mouseDelta, FoxoCraft::World& world)
 	{
-		if (!mouseLocked) return;
+		if (!MouseLock::IsLocked()) return;
 
 		if (mouseDelta.x != 0.f)
 		{
@@ -64,8 +92,6 @@ struct Player
 		if (glfwGetKey(window, GLFW_KEY_S)) ++movement.z;
 		if (glfwGetKey(window, GLFW_KEY_A)) --movement.x;
 		if (glfwGetKey(window, GLFW_KEY_D)) ++movement.x;
-		
-		
 
 		if (glfwGetKey(window, GLFW_KEY_SPACE) && canJump)
 		{
@@ -265,7 +291,6 @@ static void ImGuiInit(const FoxoCommons::Window& window)
 
 	ImGui::StyleColorsDark();
 
-	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForOpenGL(window.GetHandle(), true);
 	ImGui_ImplOpenGL3_Init("#version 460 core");
 }
@@ -318,11 +343,6 @@ int main()
 	FoxoCraft::World world = FoxoCraft::World(seed);
 	world.AddChunks();
 
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
-	glFrontFace(GL_CCW);
-	glEnable(GL_DEPTH_TEST);
-
 	FoxoCommons::Program program;
 
 	{
@@ -353,6 +373,11 @@ int main()
 		ptr->mouseCurrent.y = static_cast<float>(y);
 	});
 
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
+	glEnable(GL_DEPTH_TEST);
+
 	double lastTime, currentTime, deltaTime;
 
 	lastTime = glfwGetTime();
@@ -360,8 +385,6 @@ int main()
 
 	//Camera camera;
 	Player player;
-
-	bool mouseLocked = false;
 
 	while (!window.ShouldClose())
 	{
@@ -373,25 +396,10 @@ int main()
 		glfwPollEvents();
 		s_Storage.mouseDelta = s_Storage.mouseCurrent - s_Storage.mouseLast;
 
-		// Lock the mouse
-		if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
-		{
-			if (!mouseLocked)
-			{
-				mouseLocked = true;
-				window.SetInputMode(GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-				ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
-			}
-		}
-		else if (glfwGetKey(window.GetHandle(), GLFW_KEY_ESCAPE))
-		{
-			if (mouseLocked)
-			{
-				mouseLocked = false;
-				window.SetInputMode(GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-				ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
-			}
-		}
+		// Handle mouse lock/unlock
+		if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && !ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow)) MouseLock::Lock(window);
+		else if (glfwGetKey(window.GetHandle(), GLFW_KEY_ESCAPE)) MouseLock::Unlock(window);
+		
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -406,7 +414,7 @@ int main()
 		ImGui::End();
 
 		//camera.Update(window.GetHandle(), deltaTime, s_Storage.mouseDelta.x, s_Storage.mouseDelta.y, mouseLocked, world);
-		player.Update(window.GetHandle(), deltaTime, s_Storage.mouseDelta, mouseLocked, world);
+		player.Update(window.GetHandle(), deltaTime, s_Storage.mouseDelta, world);
 
 		auto [w, h] = window.GetSize();
 
