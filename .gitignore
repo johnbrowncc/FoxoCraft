@@ -11,3 +11,5 @@ Makefile
 *.pbxproj
 *.workspace
 *.project
+
+imgui.ini
