@@ -66,7 +66,8 @@ project "FoxoCraft"
 	filter "system:linux"
 		buildoptions
 		{
-			"-ldl"
+			"-ldl",
+			"-lpthread"
 		}
 
 	filter "configurations:Debug"
