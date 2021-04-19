@@ -54,12 +54,6 @@ project "FoxoCraft"
 	filter "system:windows"
 		defines "SPDLOG_WCHAR_TO_UTF8_SUPPORT"
 
-	filter "system:linux"
-		links
-		{
-			"libdl"
-		}
-
 	filter "system:macosx"
 		links
 		{
@@ -67,6 +61,12 @@ project "FoxoCraft"
 			"Cocoa.framework",
 			"IOKit.framework",
 			"CoreVideo.framework"
+		}
+
+	filter "system:linux"
+		buildoptions
+		{
+			"-ldl"
 		}
 
 	filter "configurations:Debug"
