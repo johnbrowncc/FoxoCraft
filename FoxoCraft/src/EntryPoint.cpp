@@ -28,6 +28,91 @@
 
 #include <limits>
 
+struct Player
+{
+	FoxoCommons::Transform m_Transform;
+	FoxoCommons::Transform m_TransformExtra;
+	float vel = 0;
+	bool canJump = false;
+
+	Player()
+	{
+		m_Transform.m_Pos.y = 80;
+	}
+
+	void Update(GLFWwindow* window, double deltaTime, glm::vec2 mouseDelta, bool mouseLocked, FoxoCraft::World& world)
+	{
+		if (!mouseLocked) return;
+
+		if (mouseDelta.x != 0.f)
+		{
+			glm::mat4 matrix = m_Transform.Recompose();
+			matrix = glm::rotate(matrix, glm::radians(mouseDelta.x * -0.1f), glm::vec3(glm::inverse(matrix) * glm::vec4(0, 1, 0, 0)));
+			m_Transform.Decompose(matrix);
+
+			matrix = m_TransformExtra.Recompose();
+			matrix = glm::rotate(matrix, glm::radians(mouseDelta.y * -0.1f), glm::vec3(1, 0, 0));
+			m_TransformExtra.Decompose(matrix);
+		}
+
+		vel += -10 * static_cast<float>(deltaTime);
+
+		float speed = 4;
+		glm::vec3 movement = glm::vec3(0.0f);
+		
+		if (glfwGetKey(window, GLFW_KEY_W)) --movement.z;
+		if (glfwGetKey(window, GLFW_KEY_S)) ++movement.z;
+		if (glfwGetKey(window, GLFW_KEY_A)) --movement.x;
+		if (glfwGetKey(window, GLFW_KEY_D)) ++movement.x;
+		
+		
+
+		if (glfwGetKey(window, GLFW_KEY_SPACE) && canJump)
+		{
+			vel = 5;
+			canJump = false;
+		}
+
+		//if (glfwGetKey(window, GLFW_KEY_SPACE)) ++movement.y;
+		//if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT)) --movement.y;
+		
+		if (glm::length2(movement) > 0)
+		{
+			movement = glm::normalize(movement) * speed * static_cast<float>(deltaTime);
+		}
+
+		glm::mat4 matrix = m_Transform.Recompose();
+		matrix = glm::translate(matrix, glm::vec3(movement));
+		FoxoCommons::Transform nextTransform;
+		nextTransform.Decompose(matrix);
+		nextTransform.m_Pos.y += vel * static_cast<float>(deltaTime);
+
+		glm::vec3& currentPos = m_Transform.m_Pos;
+		glm::vec3& nextPos = nextTransform.m_Pos;
+
+		if (!world.GetBlockWS(glm::vec3(nextPos.x, currentPos.y, currentPos.z)))
+		{
+			currentPos.x = nextPos.x;
+		}
+
+		if (!world.GetBlockWS(glm::vec3(currentPos.x, nextPos.y, currentPos.z)))
+		{
+			currentPos.y = nextPos.y;
+		}
+		else
+		{
+			vel = 0;
+			canJump = true;
+		}
+
+		if (!world.GetBlockWS(glm::vec3(currentPos.x, currentPos.y, nextPos.z)))
+		{
+			currentPos.z = nextPos.z;
+		}
+		
+	}
+};
+
 struct Camera
 {
 	FoxoCommons::Transform transform;
@@ -265,7 +350,9 @@ static int Run()
 	lastTime = glfwGetTime();
 	deltaTime = 1.;
 
-	Camera camera;
+	//Camera camera;
+	Player player;
+
 	bool mouseLocked = false;
 
 	while (!window.ShouldClose())
@@ -310,7 +397,8 @@ static int Run()
 		}
 		ImGui::End();
 
-		camera.Update(window.GetHandle(), deltaTime, s_Storage.mouseDelta.x, s_Storage.mouseDelta.y, mouseLocked, world);
+		//camera.Update(window.GetHandle(), deltaTime, s_Storage.mouseDelta.x, s_Storage.mouseDelta.y, mouseLocked, world);
+		player.Update(window.GetHandle(), deltaTime, s_Storage.mouseDelta, mouseLocked, world);
 
 		auto [w, h] = window.GetSize();
 
@@ -323,7 +411,11 @@ static int Run()
 		texture.Bind(0);
 		program.Bind();
 		program.UniformMat4f("u_Projection", glm::infinitePerspective(glm::radians(70.f), window.GetAspect(), 0.01f));
-		program.UniformMat4f("u_View", glm::inverse(camera.transform.Recompose()));
+		//program.UniformMat4f("u_View", glm::inverse(camera.transform.Recompose()));
+		FoxoCommons::Transform t = player.m_Transform;
+		t.m_Pos.y += 1.6f;
+
+		program.UniformMat4f("u_View", glm::inverse(t.Recompose() * player.m_TransformExtra.Recompose()));
 		program.UniformMat4f("u_Model", glm::mat4(1.0f));
 		program.Uniform1i("u_Albedo", 0);
 
