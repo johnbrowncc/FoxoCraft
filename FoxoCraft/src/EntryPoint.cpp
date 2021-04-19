@@ -44,7 +44,10 @@ struct Camera
 			transform.Decompose(matrix);
 		}
 
-		float speed = 10;
+		constexpr float defaultMovementSpeed = 10;
+		constexpr float accelerMovementSpeed = 50;
+
+		float speed = defaultMovementSpeed;
 
 		glm::vec4 movement = glm::vec4(0.0f);
 
@@ -56,6 +59,7 @@ struct Camera
 		if (glfwGetKey(window, GLFW_KEY_E)) ++movement.y;
 		if (glfwGetKey(window, GLFW_KEY_SPACE)) ++movement.w;
 		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT)) --movement.w;
+		if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL)) speed = accelerMovementSpeed;
 
 		if (glm::length2(movement) > 0)
 		{
@@ -198,7 +202,7 @@ static int Run()
 	FoxoCraft::RegisterBlock("core.dirt", FoxoCraft::Block(FoxoCraft::GetBlockFace("core.dirt"), FoxoCraft::GetBlockFace("core.dirt"), FoxoCraft::GetBlockFace("core.dirt")));
 	FoxoCraft::RegisterBlock("core.wood", FoxoCraft::Block(FoxoCraft::GetBlockFace("core.wood"), FoxoCraft::GetBlockFace("core.wood"), FoxoCraft::GetBlockFace("core.wood")));
 	FoxoCraft::RegisterBlock("core.stone", FoxoCraft::Block(FoxoCraft::GetBlockFace("core.stone"), FoxoCraft::GetBlockFace("core.stone"), FoxoCraft::GetBlockFace("core.stone")));
-	FoxoCraft::LockModify(); // revent further changes to structures
+	FoxoCraft::LockModify(); // prevent further changes to structures
 
 	int64_t seed = FoxoCommons::GenerateValue(std::numeric_limits<int64_t>::lowest(), std::numeric_limits<int64_t>::max());
 	FE_LOG_INFO("Using seed: {}", seed);
