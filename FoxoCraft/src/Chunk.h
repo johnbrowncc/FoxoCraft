@@ -59,6 +59,7 @@ namespace FoxoCraft
 		GLint m_Count = 0;
 		GLuint m_Vao = 0;
 		GLuint m_Vbo = 0;
+		bool m_Dirty = true;
 
 		Chunk(glm::ivec3 pos, World* world);
 		~Chunk();

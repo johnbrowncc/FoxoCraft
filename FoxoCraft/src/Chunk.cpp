@@ -209,7 +209,10 @@ namespace FoxoCraft
 	void Chunk::SetBlockLS(glm::ivec3 ls, Block* block)
 	{
 		if (!InBoundsLS(ls)) return;
+		if (GetBlockLSUS(ls) == block) return;
+
 		m_Data[IndexLS(ls)] = block;
+		m_Dirty = true;
 	}
 
 	void Chunk::Generate()
@@ -371,8 +374,6 @@ namespace FoxoCraft
 
 		glm::ivec3 cs;
 
-		double timer = glfwGetTime();
-
 		for (cs.z = -radius; cs.z <= radius; ++cs.z)
 		{
 			for (cs.y = -radius; cs.y <= radius; ++cs.y)
@@ -385,19 +386,6 @@ namespace FoxoCraft
 				}
 			}
 		}
-
-		timer = glfwGetTime() - timer;
-		FC_LOG_INFO("World gen took {}s", timer);
-
-		timer = glfwGetTime();
-
-		for (auto& [k, v] : m_Chunks)
-		{
-			v->BuildMeshV2();
-		}
-
-		timer = glfwGetTime() - timer;
-		FC_LOG_INFO("World build took {}s", timer);
 	}
 
 	Block* World::GetBlockWS(glm::vec3 ws)
@@ -424,6 +412,18 @@ namespace FoxoCraft
 
 	void World::Render(const glm::mat4& projView, DebugData& data)
 	{
+		for (auto& [k, v] : m_Chunks)
+		{
+			if (v->m_Dirty)
+			{
+				v->BuildMeshV2();
+				v->m_Dirty = false;
+				break;
+			}
+		}
+
+		/////////////////////////////////
+
 		Frustum f(projView);
 
 		data.chunksTotal = m_Chunks.size();
