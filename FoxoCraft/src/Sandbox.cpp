@@ -298,7 +298,7 @@ namespace FoxoCraft
 		m_Program.Bind();
 		m_Program.UniformMat4f("u_Projection", projectionMatrix);
 		FoxoCommons::Transform t = m_Player.m_Transform;
-		t.m_Pos.y += 1.6f;
+		t.m_Pos.y += 1.7f;
 
 		glm::mat4 viewMatrix = glm::inverse(t.Recompose() * m_Player.m_TransformExtra.Recompose());
 
