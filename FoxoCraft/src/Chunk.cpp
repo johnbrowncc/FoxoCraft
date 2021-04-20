@@ -5,6 +5,7 @@
 #include "debug-trap.h"
 
 #include "Log.h"
+#include "FrustumCull.h"
 
 #include <GLFW/glfw3.h>
 
@@ -342,10 +343,13 @@ namespace FoxoCraft
 		}
 	}
 
+	bool Chunk::IsAvailable()
+	{
+		return m_Vao != 0 && m_Vbo != 0;
+	}
+
 	void Chunk::Render()
 	{
-		if (m_Vao == 0 || m_Vbo == 0) return;
-
 		glBindVertexArray(m_Vao);
 		glDrawArrays(GL_TRIANGLES, 0, m_Count);
 	}
@@ -418,11 +422,24 @@ namespace FoxoCraft
 		return result->second->GetBlockLS(ls);
 	}
 
-	void World::Render()
+	void World::Render(const glm::mat4& projView, DebugData& data)
 	{
+		Frustum f(projView);
+
+		data.chunksTotal = m_Chunks.size();
+		data.chunksRendered = 0;
+
 		for (auto& [k, v] : m_Chunks)
 		{
-			v->Render();
+			glm::vec3 chunkMin = v->m_Pos;
+			chunkMin *= static_cast<float>(s_ChunkSize);
+			glm::vec3 chunkMax = chunkMin + static_cast<float>(s_ChunkSize);
+
+			if (v->IsAvailable() && f.IsBoxVisible(chunkMin, chunkMax))
+			{
+				++data.chunksRendered;
+				v->Render();
+			}
 		}
 	}
 }

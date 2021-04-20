@@ -10,6 +10,7 @@
 
 #include "Application.h"
 #include "Chunk.h"
+#include "DebugInfo.h"
 
 namespace MouseLock
 {
@@ -40,11 +41,12 @@ struct Camera final
 {
 	float m_Fov = 90.f;
 	float m_Near = 0.01f;
+	float m_Far = 1000.f;
 	float m_Aspect = 1.f;
 
 	glm::mat4 Calculate()
 	{
-		return glm::infinitePerspective(glm::radians(m_Fov), m_Aspect, m_Near);
+		return glm::perspective(glm::radians(m_Fov), m_Aspect, m_Near, m_Far);
 	}
 };
 
@@ -71,6 +73,8 @@ namespace FoxoCraft
 		Player m_Player;
 
 		World m_World = World(0);
+
+		DebugData s_DebugData;
 
 		FoxoCommons::Program m_Program;
 		FoxoCommons::Texture2DArray m_Texture;

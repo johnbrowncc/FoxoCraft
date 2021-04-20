@@ -10,6 +10,7 @@
 #include <glad/gl.h>
 
 #include "OpenSimplexNoise.h"
+#include "DebugInfo.h"
 
 namespace FoxoCraft
 {
@@ -83,6 +84,8 @@ namespace FoxoCraft
 
 		void BuildMeshV2();
 
+		bool IsAvailable();
+
 		void Render();
 	};
 
@@ -115,6 +118,6 @@ namespace FoxoCraft
 		Block* GetBlockWS(glm::ivec3 ws);
 		Block* GetBlockWS(glm::vec3 ws);
 
-		void Render();
+		void Render(const glm::mat4& projView, DebugData& data);
 	};
 }

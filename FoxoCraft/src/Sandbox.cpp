@@ -277,20 +277,9 @@ namespace FoxoCraft
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-
-		static bool enableWireframe = false;
-
-		if (ImGui::Begin("Debug"))
-		{
-			ImGui::Checkbox("Enable Wireframe", &enableWireframe);
-
-			ImGui::Separator();
-			ImGui::Text("Player Pos");
-			ImGui::Text("X: %i", static_cast<int>(m_Player.m_Transform.m_Pos.x));
-			ImGui::Text("Y: %i", static_cast<int>(m_Player.m_Transform.m_Pos.y));
-			ImGui::Text("Z: %i", static_cast<int>(m_Player.m_Transform.m_Pos.z));
-		}
-		ImGui::End();
+		
+		s_DebugData.playerPos = m_Player.m_Transform.m_Pos;
+		s_DebugData.Draw();
 
 		m_Player.Update(m_Window.GetHandle(), GetDeltaTime(), m_MouseDelta, m_World);
 
@@ -301,21 +290,25 @@ namespace FoxoCraft
 		glClearColor(0.7f, 0.8f, 0.9f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		if (enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		if (s_DebugData.enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+		glm::mat4 projectionMatrix = m_Camera.Calculate();
 
 		m_Texture.Bind(0);
 		m_Program.Bind();
-		m_Program.UniformMat4f("u_Projection", m_Camera.Calculate());
+		m_Program.UniformMat4f("u_Projection", projectionMatrix);
 		FoxoCommons::Transform t = m_Player.m_Transform;
 		t.m_Pos.y += 1.6f;
 
-		m_Program.UniformMat4f("u_View", glm::inverse(t.Recompose() * m_Player.m_TransformExtra.Recompose()));
+		glm::mat4 viewMatrix = glm::inverse(t.Recompose() * m_Player.m_TransformExtra.Recompose());
+
+		m_Program.UniformMat4f("u_View", viewMatrix);
 		m_Program.UniformMat4f("u_Model", glm::mat4(1.0f));
 		m_Program.Uniform1i("u_Albedo", 0);
 
-		m_World.Render();
+		m_World.Render(projectionMatrix * viewMatrix, s_DebugData);
 
-		if (enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		if (s_DebugData.enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
