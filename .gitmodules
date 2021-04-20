@@ -13,3 +13,6 @@
 [submodule "vendor/imgui"]
 	path = vendor/imgui
 	url = https://github.com/ocornut/imgui
+[submodule "vendor/bgfx"]
+	path = vendor/bgfx
+	url = https://github.com/bkaradzic/bgfx
