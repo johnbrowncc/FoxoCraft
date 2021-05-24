@@ -7,6 +7,7 @@
 #include <FoxoCommons/Transform.h>
 #include <FoxoCommons/Shader.h>
 #include <FoxoCommons/Texture.h>
+#include <FoxoCommons/State.h>
 
 #include "Application.h"
 #include "Chunk.h"
@@ -69,12 +70,7 @@ namespace FoxoCraft
 		glm::vec2 m_MouseCurrent = glm::vec2();
 		glm::vec2 m_MouseDelta = glm::vec2();
 
-		Camera m_Camera;
-		Player m_Player;
-
-		World m_World = World(0);
-
-		DebugData s_DebugData;
+		FoxoCommons::StateManager m_StateManger;
 
 		FoxoCommons::Program m_Program;
 		FoxoCommons::Texture2DArray m_Texture;

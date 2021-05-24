@@ -180,6 +180,100 @@ struct ModLoader
 
 namespace FoxoCraft
 {
+	class GameState final : public FoxoCommons::State
+	{
+	public:
+		GameState() = default;
+		virtual ~GameState() = default;
+
+		virtual void Init() override
+		{
+			int64_t seed = FoxoCommons::GenerateValue(std::numeric_limits<int64_t>::lowest(), std::numeric_limits<int64_t>::max());
+			FC_LOG_INFO("Using seed: {}", seed);
+			m_World = FoxoCraft::World(seed);
+			m_World.AddChunks();
+		}
+
+		virtual void Update() override
+		{
+			Sandbox* game = GetStateManager()->GetUserPtr<Sandbox>();
+
+			s_DebugData.playerPos = m_Player.m_Transform.m_Pos;
+			s_DebugData.Draw();
+
+			m_Player.Update(game->m_Window.GetHandle(), game->GetDeltaTime(), game->m_MouseDelta, m_World);
+
+			auto [w, h] = game->m_Window.GetSize();
+			m_Camera.m_Aspect = game->m_Window.GetAspect();
+
+			glViewport(0, 0, w, h);
+			glClearColor(0.7f, 0.8f, 0.9f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			if (s_DebugData.enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+			glm::mat4 projectionMatrix = m_Camera.Calculate();
+
+			game->m_Texture.Bind(0);
+			game->m_Program.Bind();
+			game->m_Program.UniformMat4f("u_Projection", projectionMatrix);
+			FoxoCommons::Transform t = m_Player.m_Transform;
+			t.m_Pos.y += 1.7f;
+
+			glm::mat4 viewMatrix = glm::inverse(t.Recompose() * m_Player.m_TransformExtra.Recompose());
+
+			game->m_Program.UniformMat4f("u_View", viewMatrix);
+			game->m_Program.UniformMat4f("u_Model", glm::mat4(1.0f));
+			game->m_Program.Uniform1i("u_Albedo", 0);
+
+			m_World.Render(projectionMatrix * viewMatrix, s_DebugData);
+
+			if (s_DebugData.enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
+
+		virtual void Destroy() override
+		{
+		}
+	private:
+		Camera m_Camera;
+		Player m_Player;
+		World m_World = World(0);
+		DebugData s_DebugData;
+	};
+
+	class MenuState final : public FoxoCommons::State
+	{
+	public:
+		MenuState() = default;
+		virtual ~MenuState() = default;
+
+		virtual void Init() override
+		{
+		}
+
+		virtual void Update() override
+		{
+			if (ImGui::Begin(__FUNCTION__))
+			{
+				if (ImGui::Button("Play"))
+				{
+					FoxoCommons::StateManager* manager = GetStateManager();
+					Sandbox* game = manager->GetUserPtr<Sandbox>();
+
+					game->InvokeLater([manager]()
+					{
+						manager->SetState<GameState>();
+					});
+				}
+			}
+			ImGui::End();
+		}
+
+		virtual void Destroy() override
+		{
+		}
+	};
+
 	void Sandbox::Init()
 	{
 		m_Window = FoxoCommons::Window(1280, 720, "FoxoCraft", []()
@@ -224,11 +318,6 @@ namespace FoxoCraft
 		FoxoCraft::RegisterBlock("core.stone", FoxoCraft::Block(FoxoCraft::GetBlockFace("core.stone"), FoxoCraft::GetBlockFace("core.stone"), FoxoCraft::GetBlockFace("core.stone")));
 		FoxoCraft::LockModify(); // prevent further changes to structures
 
-		int64_t seed = FoxoCommons::GenerateValue(std::numeric_limits<int64_t>::lowest(), std::numeric_limits<int64_t>::max());
-		FC_LOG_INFO("Using seed: {}", seed);
-		m_World = FoxoCraft::World(seed);
-		m_World.AddChunks();
-
 		std::optional<std::string> vertSrc = FoxoCommons::ReadTextFile("res/chunk.vert");
 		std::optional<std::string> fragSrc = FoxoCommons::ReadTextFile("res/chunk.frag");
 
@@ -262,6 +351,9 @@ namespace FoxoCraft
 		glCullFace(GL_BACK);
 		glFrontFace(GL_CCW);
 		glEnable(GL_DEPTH_TEST);
+
+		m_StateManger.SetUserPtr(this);
+		m_StateManger.SetState<MenuState>();
 	}
 
 	void Sandbox::Update()
@@ -277,38 +369,11 @@ namespace FoxoCraft
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-		
-		s_DebugData.playerPos = m_Player.m_Transform.m_Pos;
-		s_DebugData.Draw();
 
-		m_Player.Update(m_Window.GetHandle(), GetDeltaTime(), m_MouseDelta, m_World);
-
-		auto [w, h] = m_Window.GetSize();
-		m_Camera.m_Aspect = m_Window.GetAspect();
-
-		glViewport(0, 0, w, h);
-		glClearColor(0.7f, 0.8f, 0.9f, 1.0f);
+		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		if (s_DebugData.enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-		glm::mat4 projectionMatrix = m_Camera.Calculate();
-
-		m_Texture.Bind(0);
-		m_Program.Bind();
-		m_Program.UniformMat4f("u_Projection", projectionMatrix);
-		FoxoCommons::Transform t = m_Player.m_Transform;
-		t.m_Pos.y += 1.7f;
-
-		glm::mat4 viewMatrix = glm::inverse(t.Recompose() * m_Player.m_TransformExtra.Recompose());
-
-		m_Program.UniformMat4f("u_View", viewMatrix);
-		m_Program.UniformMat4f("u_Model", glm::mat4(1.0f));
-		m_Program.Uniform1i("u_Albedo", 0);
-
-		m_World.Render(projectionMatrix * viewMatrix, s_DebugData);
-
-		if (s_DebugData.enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		
+		m_StateManger.Update();
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
