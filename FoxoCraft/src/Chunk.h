@@ -51,7 +51,7 @@ namespace FoxoCraft
 
 	struct World;
 
-	struct Chunk
+	struct Chunk final
 	{
 		glm::ivec3 m_Pos = glm::ivec3(0, 0, 0);
 		World* m_World = nullptr;
