@@ -297,19 +297,36 @@ namespace FoxoCraft
 					Block* block = GetBlockLS(ls);
 					if (!block) continue;
 
-					if (!GetBlockWSEX(ws + glm::ivec3(-1, 0, 0))) Faces::AppendFace(data, 0, ws, block->m_Side->m_TextureIndex, m_Count);
-					if (!GetBlockWSEX(ws + glm::ivec3(1, 0, 0))) Faces::AppendFace(data, 1, ws, block->m_Side->m_TextureIndex, m_Count);
-					if (!GetBlockWSEX(ws + glm::ivec3(0, -1, 0))) Faces::AppendFace(data, 2, ws, block->m_Bottom->m_TextureIndex, m_Count);
-					if (!GetBlockWSEX(ws + glm::ivec3(0, 1, 0))) Faces::AppendFace(data, 3, ws, block->m_Top->m_TextureIndex, m_Count);
-					if (!GetBlockWSEX(ws + glm::ivec3(0, 0, -1))) Faces::AppendFace(data, 4, ws, block->m_Side->m_TextureIndex, m_Count);
-					if (!GetBlockWSEX(ws + glm::ivec3(0, 0, 1))) Faces::AppendFace(data, 5, ws, block->m_Side->m_TextureIndex, m_Count);
+					// W is the side, 0 is top, 1 is side, 2 is bottom
+					constexpr const std::array<glm::ivec4, 6> faceDirections =
+					{
+						glm::ivec4(-1, 0, 0, 1),
+						glm::ivec4(1, 0, 0, 1),
+						glm::ivec4(0, -1, 0, 2),
+						glm::ivec4(0, 1, 0, 0),
+						glm::ivec4(0, 0, -1, 1),
+						glm::ivec4(0, 0, 1, 1)
+					};
 
-					/*if (!GetBlockLS(ls + glm::ivec3(-1, 0, 0))) Faces::AppendFace(data, 0, ws, block->m_Side->m_TextureIndex, m_Count);
-					if (!GetBlockLS(ls + glm::ivec3(1, 0, 0))) Faces::AppendFace(data, 1, ws, block->m_Side->m_TextureIndex, m_Count);
-					if (!GetBlockLS(ls + glm::ivec3(0, -1, 0))) Faces::AppendFace(data, 2, ws, block->m_Bottom->m_TextureIndex, m_Count);
-					if (!GetBlockLS(ls + glm::ivec3(0, 1, 0))) Faces::AppendFace(data, 3, ws, block->m_Top->m_TextureIndex, m_Count);
-					if (!GetBlockLS(ls + glm::ivec3(0, 0, -1))) Faces::AppendFace(data, 4, ws, block->m_Side->m_TextureIndex, m_Count);
-					if (!GetBlockLS(ls + glm::ivec3(0, 0, 1))) Faces::AppendFace(data, 5, ws, block->m_Side->m_TextureIndex, m_Count);*/
+					for (size_t i = 0; i < 6; ++i)
+					{
+						size_t textureIndex = 0;
+
+						switch (faceDirections[i].w)
+						{
+							case 0:
+								textureIndex = block->m_Top->m_TextureIndex;
+								break;
+							case 1:
+								textureIndex = block->m_Side->m_TextureIndex;
+								break;
+							case 2:
+								textureIndex = block->m_Bottom->m_TextureIndex;
+								break;
+						}
+
+						if (!GetBlockWSEX(ws + glm::ivec3(faceDirections[i]))) Faces::AppendFace(data, i, ws, textureIndex, m_Count);
+					}
 				}
 			}
 		}
