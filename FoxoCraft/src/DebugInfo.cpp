@@ -3,6 +3,8 @@
 #include "Chunk.h"
 #include <imgui.h>
 
+#include <FoxoCommons/OpenSimplexNoise.h>
+
 void DebugData::Draw()
 {
 	if (ImGui::Begin("Debug"))

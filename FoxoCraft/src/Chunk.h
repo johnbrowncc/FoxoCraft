@@ -9,7 +9,7 @@
 #include <glm/glm.hpp>
 #include <glad/gl.h>
 
-#include "OpenSimplexNoise.h"
+#include <FoxoCommons/OpenSimplexNoise.h>
 #include "DebugInfo.h"
 
 namespace FoxoCraft
