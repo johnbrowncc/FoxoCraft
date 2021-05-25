@@ -2,10 +2,10 @@
 
 #include <unordered_map>
 
-#include "debug-trap.h"
+#include <FoxoCommons/debug-trap.h>
 
 #include "Log.h"
-#include "FrustumCull.h"
+#include <FoxoCommons/FrustumCull.h>
 
 #include <GLFW/glfw3.h>
 
