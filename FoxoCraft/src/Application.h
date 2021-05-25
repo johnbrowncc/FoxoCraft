@@ -18,9 +18,8 @@ namespace FoxoCraft
 
 			Init();
 
-			double lastTime, currentTime;
-
-			lastTime = GetTime();
+			double lastTime = GetTime();
+			double currentTime;
 
 			while (m_Running)
 			{
@@ -28,10 +27,10 @@ namespace FoxoCraft
 				m_DeltaTime = currentTime - lastTime;
 				lastTime = currentTime;
 
-				while (!m_Laters.empty())
+				while (!m_InvokesNextFrame.empty())
 				{
-					m_Laters.front()();
-					m_Laters.pop_front();
+					m_InvokesNextFrame.front()();
+					m_InvokesNextFrame.pop_front();
 				}
 
 				Update();
@@ -55,16 +54,17 @@ namespace FoxoCraft
 			return m_DeltaTime;
 		}
 
-		inline void InvokeLater(const std::function<void()>& function)
+		inline void InvokeNextFrame(const std::function<void()>& function)
 		{
-			m_Laters.push_back(function);
+			m_InvokesNextFrame.push_back(function);
 		}
 	private:
 		bool m_Running = false;
 		double m_DeltaTime = 1.;
 
-		std::deque<std::function<void()>> m_Laters;
+		std::deque<std::function<void()>> m_InvokesNextFrame;
 	};
 
+	// To be implmented by the client
 	Application* GetApplication();
 }

@@ -278,6 +278,17 @@ namespace FoxoCraft
 
 	void Chunk::BuildMeshV2()
 	{
+		// W is the side, 0 is top, 1 is side, 2 is bottom
+		constexpr const std::array<glm::ivec4, 6> faceDirections =
+		{
+			glm::ivec4(-1, 0, 0, 1),
+			glm::ivec4(1, 0, 0, 1),
+			glm::ivec4(0, -1, 0, 2),
+			glm::ivec4(0, 1, 0, 0),
+			glm::ivec4(0, 0, -1, 1),
+			glm::ivec4(0, 0, 1, 1)
+		};
+
 		std::vector<float> data;
 		m_Count = 0;
 
@@ -296,17 +307,6 @@ namespace FoxoCraft
 
 					Block* block = GetBlockLS(ls);
 					if (!block) continue;
-
-					// W is the side, 0 is top, 1 is side, 2 is bottom
-					constexpr const std::array<glm::ivec4, 6> faceDirections =
-					{
-						glm::ivec4(-1, 0, 0, 1),
-						glm::ivec4(1, 0, 0, 1),
-						glm::ivec4(0, -1, 0, 2),
-						glm::ivec4(0, 1, 0, 0),
-						glm::ivec4(0, 0, -1, 1),
-						glm::ivec4(0, 0, 1, 1)
-					};
 
 					for (size_t i = 0; i < 6; ++i)
 					{

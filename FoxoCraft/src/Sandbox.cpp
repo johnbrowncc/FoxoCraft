@@ -39,13 +39,14 @@ void Player::Update(GLFWwindow* window, double deltaTime, glm::vec2 mouseDelta, 
 
 	if (mouseDelta.x != 0.f)
 	{
-		glm::mat4 matrix = m_Transform.Recompose();
-		matrix = glm::rotate(matrix, glm::radians(mouseDelta.x * -0.1f), glm::vec3(glm::inverse(matrix) * glm::vec4(0, 1, 0, 0)));
-		m_Transform.Decompose(matrix);
+		m_Transform.Rotate(glm::radians(mouseDelta.x * -0.1f), glm::vec3(0, 1, 0));
+	}
 
-		matrix = m_TransformExtra.Recompose();
+	if (mouseDelta.y != 0.f)
+	{
+		glm::mat4 matrix = m_TransformExtra.Recompose();
 		matrix = glm::rotate(matrix, glm::radians(mouseDelta.y * -0.1f), glm::vec3(1, 0, 0));
-		m_TransformExtra.Decompose(matrix);
+		m_TransformExtra.FromMatrix(matrix);
 	}
 
 	vel += -10 * static_cast<float>(deltaTime);
@@ -72,10 +73,10 @@ void Player::Update(GLFWwindow* window, double deltaTime, glm::vec2 mouseDelta, 
 		movement = glm::normalize(movement) * speed * static_cast<float>(deltaTime);
 	}
 
-	glm::mat4 matrix = m_Transform.Recompose();
+	glm::mat4 matrix = m_Transform.ToMatrix();
 	matrix = glm::translate(matrix, glm::vec3(movement));
 	FoxoCommons::Transform nextTransform;
-	nextTransform.Decompose(matrix);
+	nextTransform.FromMatrix(matrix);
 	nextTransform.m_Pos.y += vel * static_cast<float>(deltaTime);
 
 	glm::vec3& currentPos = m_Transform.m_Pos;
@@ -220,7 +221,7 @@ namespace FoxoCraft
 			FoxoCommons::Transform t = m_Player.m_Transform;
 			t.m_Pos.y += 1.7f;
 
-			glm::mat4 viewMatrix = glm::inverse(t.Recompose() * m_Player.m_TransformExtra.Recompose());
+			glm::mat4 viewMatrix = glm::inverse(t.ToMatrix() * m_Player.m_TransformExtra.ToMatrix());
 
 			game->m_Program.UniformMat4f("u_View", viewMatrix);
 			game->m_Program.UniformMat4f("u_Model", glm::mat4(1.0f));
@@ -260,7 +261,7 @@ namespace FoxoCraft
 					FoxoCommons::StateManager* manager = GetStateManager();
 					Sandbox* game = manager->GetUserPtr<Sandbox>();
 
-					game->InvokeLater([manager]()
+					game->InvokeNextFrame([manager]()
 					{
 						manager->SetState<GameState>();
 					});
