@@ -8,8 +8,8 @@
 #include <FoxoCommons/Shader.h>
 #include <FoxoCommons/Texture.h>
 #include <FoxoCommons/State.h>
+#include <FoxoCommons/Application.h>
 
-#include "Application.h"
 #include "Chunk.h"
 #include "DebugInfo.h"
 
@@ -53,7 +53,7 @@ struct Camera final
 
 namespace FoxoCraft
 {
-	class Sandbox : public Application
+	class Sandbox : public FoxoCommons::Application
 	{
 	public:
 		Sandbox() = default;

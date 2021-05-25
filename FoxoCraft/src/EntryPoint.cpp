@@ -1,8 +1,8 @@
 #include "Sandbox.h"
 
-static FoxoCraft::Application* s_App;
+static FoxoCommons::Application* s_App;
 
-namespace FoxoCraft
+namespace FoxoCommons
 {
 	Application* GetApplication()
 	{

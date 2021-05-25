@@ -30,6 +30,7 @@ void MouseLock::Unlock(FoxoCommons::Window& window)
 
 Player::Player()
 {
+	m_Transform.m_Pos.x = 5;
 	m_Transform.m_Pos.y = 80;
 }
 
@@ -37,21 +38,21 @@ void Player::Update(GLFWwindow* window, double deltaTime, glm::vec2 mouseDelta, 
 {
 	if (!MouseLock::IsLocked()) return;
 
+	constexpr float sensitivity = 0.1f;
+	constexpr float gravity = -10.f;
+	constexpr float walkspeed = 4.f;
+	constexpr float runspeed = walkspeed * 2.f;
+	constexpr float jump = 5.f;
+
 	if (mouseDelta.x != 0.f)
-	{
-		m_Transform.Rotate(glm::radians(mouseDelta.x * -0.1f), glm::vec3(0, 1, 0));
-	}
+		m_Transform.Rotate(glm::radians(mouseDelta.x * -sensitivity), glm::vec3(0, 1, 0));
 
 	if (mouseDelta.y != 0.f)
-	{
-		glm::mat4 matrix = m_TransformExtra.Recompose();
-		matrix = glm::rotate(matrix, glm::radians(mouseDelta.y * -0.1f), glm::vec3(1, 0, 0));
-		m_TransformExtra.FromMatrix(matrix);
-	}
+		m_TransformExtra.Rotate(glm::radians(mouseDelta.y * -sensitivity), glm::vec3(1, 0, 0));
 
-	vel += -10 * static_cast<float>(deltaTime);
+	vel += gravity * static_cast<float>(deltaTime);
 
-	float speed = 4;
+	
 	glm::vec3 movement = glm::vec3(0.0f);
 
 	if (glfwGetKey(window, GLFW_KEY_W)) --movement.z;
@@ -61,17 +62,18 @@ void Player::Update(GLFWwindow* window, double deltaTime, glm::vec2 mouseDelta, 
 
 	if (glfwGetKey(window, GLFW_KEY_SPACE) && canJump)
 	{
-		vel = 5;
+		vel = jump;
 		canJump = false;
 	}
 
 	//if (glfwGetKey(window, GLFW_KEY_SPACE)) ++movement.y;
 	//if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT)) --movement.y;
 
+	float speed = walkspeed;
+	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL)) speed = runspeed;
+
 	if (glm::length2(movement) > 0)
-	{
 		movement = glm::normalize(movement) * speed * static_cast<float>(deltaTime);
-	}
 
 	glm::mat4 matrix = m_Transform.ToMatrix();
 	matrix = glm::translate(matrix, glm::vec3(movement));
@@ -101,7 +103,6 @@ void Player::Update(GLFWwindow* window, double deltaTime, glm::vec2 mouseDelta, 
 	{
 		currentPos.z = nextPos.z;
 	}
-
 }
 
 struct ModLoader
