@@ -30,8 +30,7 @@ void MouseLock::Unlock(FoxoCommons::Window& window)
 
 Player::Player()
 {
-	m_Transform.m_Pos.x = 5;
-	m_Transform.m_Pos.y = 80;
+	m_Transform.m_Pos = { 5, 60, 5 };
 }
 
 void Player::Update(GLFWwindow* window, double deltaTime, glm::vec2 mouseDelta, FoxoCraft::World& world)

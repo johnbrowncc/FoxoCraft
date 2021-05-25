@@ -229,7 +229,6 @@ namespace FoxoCraft
 
 		Block* grass = GetBlock("core.grass");
 		Block* dirt = GetBlock("core.dirt");
-		Block* wood = GetBlock("core.wood");
 		Block* stone = GetBlock("core.stone");
 
 		glm::ivec3 ws;
@@ -268,9 +267,6 @@ namespace FoxoCraft
 
 					if (ws.y == height)
 						SetBlockLS(ls, grass);
-
-					if (((ws.x == 0 || ws.z == 0) && ws.y == 0) || ((ws.y == 0 || ws.z == 0) && ws.x == 0))
-						SetBlockLS(ls, wood);
 				}
 			}
 		}

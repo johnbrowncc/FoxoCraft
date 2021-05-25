@@ -22,7 +22,6 @@ void DebugData::Draw()
 		int yl = yi - yc * FoxoCraft::s_ChunkSize;
 		int zl = zi - zc * FoxoCraft::s_ChunkSize;
 
-		ImGui::Text("FoxoCraft");
 		ImGui::Text("%i fps", static_cast<int>(ImGui::GetIO().Framerate));
 		ImGui::Text("C: %i/%i", chunksRendered, chunksTotal);
 		ImGui::Text("XYZ: %.3f / %.3f / %.3f", xf, yf, zf);
